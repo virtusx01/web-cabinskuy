@@ -43,7 +43,7 @@ class ReportController extends Controller
             // 1. Calculate all the required statistics
             $totalCabins = Cabin::count();
             $totalCabinRooms = CabinRoom::count();
-            $totalUsers = User::where('role', '0')->count(); // Assuming role 0 is regular user
+            $totalUsers = User::where('role', 'customer')->count(); // Assuming role 0 is regular user
             $totalBookings = Booking::count();
             $totalRevenue = Booking::where('status', 'confirmed')->sum('total_price');
             

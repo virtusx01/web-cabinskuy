@@ -12,21 +12,26 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_user')->unique(); 
+            // Kolom-kolom yang disesuaikan dari Laravel 10
+            $table->id(); // Primary key auto-increment standar
+            $table->string('id_user')->unique(); // ID kustom Anda
             $table->string('name');
             $table->string('email')->unique();
-            $table->enum('role', ['owner','admin','customer'])->default('customer');
-            $table->boolean('status', [0, 1])->default(1);
-            $table->string('google_id')->nullable();
-            $table->string('google_avatar_url')->nullable();
-            $table->string('password'); 
-            $table->string('hp', 13)->default(""); 
-            $table->string('profile_photo_path')->nullable(); 
-            $table->timestamps(); 
+            $table->enum('role', ['owner', 'admin', 'customer'])->default('customer');
+            $table->boolean('status')->default(true); // Menggunakan boolean lebih baik, defaultnya true (1)
+            $table->string('google_id')->nullable(); // Untuk menyimpan ID dari Google
+            $table->string('google_avatar_url')->nullable(); // Untuk menyimpan URL avatar dari Google
+            $table->string('password')->nullable(); // Dibuat nullable untuk mengakomodasi login via Google
+            $table->string('hp', 15)->nullable(); // Panjang disarankan 15, dibuat nullable
+            $table->string('profile_photo_path')->nullable();
+            
+            // Kolom-kolom standar Laravel yang tetap dipertahankan
+            $table->timestamp('email_verified_at')->nullable(); // Sebaiknya tetap ada
+            $table->rememberToken(); // Penting untuk fitur "Ingat Saya"
+            $table->timestamps();
         });
-    
 
+        // Tabel-tabel bawaan Laravel 11/12 ini sebaiknya tetap ada karena penting untuk fungsionalitas inti
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
