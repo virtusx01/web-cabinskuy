@@ -2,102 +2,140 @@
 
 namespace App\Http\Controllers;
 
-// Import all necessary Models and classes
-use App\Models\User;
 use App\Models\Cabin;
-use App\Models\CabinRoom;
-use App\Models\Booking;
-use App\Models\CabinReport;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Carbon;
 
-class ReportController extends Controller
+class UserCabinController extends Controller
 {
     /**
-     * Display a paginated list of all generated reports.
-     *
-     * @return \Illuminate\View\View
+     * Menangani request POST dari form pencarian di beranda.
+     * Tugasnya adalah me-redirect ke method index() dengan parameter GET.
      */
-    public function index()
+    public function search(Request $request)
     {
-        // Fetch all reports from the database, newest first, and paginate them
-        $reports = CabinReport::orderBy('report_date', 'desc')->paginate(15);
+        // Ambil semua input dari form, kecuali token CSRF
+        $filters = $request->except('_token');
 
-        return view('admin.reports.index', [
-            'title' => 'Laporan Harian',
-            'reports' => $reports,
+        // Buang parameter yang nilainya kosong (null atau string kosong)
+        $queryParameters = array_filter($filters, function($value) {
+            return $value !== null && $value !== '';
+        });
+
+        // Redirect ke route index (GET) dengan membawa parameter filter
+        return redirect()->route('frontend.kabin.index', $queryParameters);
+    }
+
+    /**
+     * Menampilkan halaman daftar kabin dan menangani semua filter.
+     * Method ini menerima request GET, baik langsung maupun dari redirect.
+     */
+    public function index(Request $request)
+    {
+        // Query dasar untuk kabin yang statusnya aktif
+        $query = Cabin::where('status', true);
+
+        // --- APLIKASIKAN SEMUA FILTER DARI URL ---
+
+        // Filter berdasarkan Provinsi
+        if ($request->filled('province')) {
+            $query->where('province', $request->province);
+        }
+
+        // Filter berdasarkan Kabupaten/Kota (dari filter di halaman listcabin)
+        if ($request->filled('regency')) {
+            $query->where('regency', $request->regency);
+        }
+        
+        // Filter berdasarkan Tipe Kamar (dari filter di halaman listcabin)
+        if ($request->filled('typeroom')) {
+            $query->whereHas('rooms', function ($q) use ($request) {
+                $q->where('typeroom', $request->typeroom);
+            });
+        }
+
+        // Filter berdasarkan Jumlah Tamu
+        if ($request->filled('guests')) {
+            $query->whereHas('rooms', function ($q) use ($request) {
+                $q->where('status', true)->where('max_guests', '>=', $request->guests);
+            });
+        }
+
+        // Filter berdasarkan Ketersediaan Tanggal (Check-in & Check-out)
+        if ($request->filled('check_in_date') && $request->filled('check_out_date')) {
+            $check_in_date = Carbon::parse($request->check_in_date);
+            $check_out_date = Carbon::parse($request->check_out_date);
+
+            $query->whereHas('rooms', function ($roomQuery) use ($check_in_date, $check_out_date, $request) {
+                $roomQuery->where('status', true)
+                    ->whereDoesntHave('bookings', function ($bookingQuery) use ($check_in_date, $check_out_date) {
+                        $bookingQuery->where('check_out_date', '>', $check_in_date)
+                                     ->where('check_in_date', '<', $check_out_date)
+                                     ->whereNotIn('status', ['cancelled', 'rejected', 'expired']);
+                    });
+
+                // Jika ada filter tamu, pastikan kamar yang tersedia juga memenuhi kapasitas
+                if ($request->filled('guests')) {
+                    $roomQuery->where('max_guests', '>=', $request->guests);
+                }
+            });
+        }
+
+        // Eager load relasi 'rooms' agar efisien
+        $query->with(['rooms' => function($q) {
+            $q->where('status', true);
+        }]);
+
+        // Eksekusi query dan ambil hasil dengan paginasi
+        // `paginate(9)` berarti 9 kabin per halaman
+        $cabins = $query->latest('id_cabin')->paginate(9);
+
+        // --- SIAPKAN DATA UNTUK DROPDOWN FILTER DI VIEW ---
+
+        // Ambil daftar provinsi unik untuk filter
+        $provinces = Cabin::select('province')->where('status', true)->whereNotNull('province')->distinct()->orderBy('province', 'asc')->get();
+
+        // Ambil daftar kabupaten/kota HANYA jika provinsi sudah dipilih di filter
+        $regencies = collect();
+        if ($request->filled('province')) {
+            $regencies = Cabin::select('regency')->where('status', true)->where('province', $request->province)->distinct()->orderBy('regency', 'asc')->get();
+        }
+        
+        // Kirim semua data yang diperlukan ke view 'listcabin'
+        return view('frontend.listcabin', [
+            'cabins' => $cabins,
+            'provinces' => $provinces,
+            'regencies' => $regencies,
+            'title' => 'Hasil Pencarian Kabin' // Judul halaman
         ]);
     }
 
     /**
-     * Generate and store a new report for the current day.
-     * This method contains the logic moved from AdminController.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * Menampilkan halaman detail untuk satu kabin.
      */
-    public function store(Request $request)
+    public function show(Cabin $cabin)
     {
-        try {
-            // 1. Calculate all the required statistics
-            $totalCabins = Cabin::count();
-            $totalCabinRooms = CabinRoom::count();
-            $totalUsers = User::where('role', '0')->count(); // Assuming role 0 is regular user
-            $totalBookings = Booking::count();
-            $totalRevenue = Booking::where('status', 'confirmed')->sum('total_price');
-            
-            // 2. Get a snapshot of the 5 most recent bookings
-            $recentBookings = Booking::with(['user', 'room.cabin'])->latest()->take(5)->get();
-
-            // 3. Format the snapshot into a clean array to be stored as JSON
-            $bookingsSnapshot = $recentBookings->map(function ($booking) {
-                return [
-                    'cabin_name' => $booking->room?->cabin?->name ?? 'N/A',
-                    'guest_name' => $booking->user?->name ?? 'N/A',
-                    'check_in' => $booking->check_in_date,
-                    'status' => $booking->status,
-                    // You might also want to add the room type here for more detail:
-                    'room_type' => $booking->room?->typeroom ?? 'N/A',
-                ];
-            });
-
-            // 4. Use updateOrCreate to prevent duplicate reports for the same day.
-            // It will CREATE a report if one doesn't exist for today,
-            // or UPDATE it if it already exists.
-            CabinReport::updateOrCreate(
-                ['report_date' => Carbon::today()], // The condition to find the record
-                [                                   // The data to insert or update
-                    'total_cabins' => $totalCabins,
-                    'total_cabinrooms' => $totalCabinRooms,
-                    'total_users' => $totalUsers,
-                    'total_bookings' => $totalBookings,
-                    'total_revenue' => $totalRevenue,
-                    'recent_bookings_snapshot' => $bookingsSnapshot,
-                ]
-            );
-
-            // 5. Redirect back to the reports list with a success message
-            return redirect()->route('admin.reports.index')->with('success', 'Laporan untuk hari ini telah berhasil dibuat/diperbarui.');
-
-        } catch (\Exception $e) {
-            // If something goes wrong, log the error and redirect with an error message.
-            Log::error('Failed to generate report: ' . $e->getMessage());
-            return redirect()->route('admin.reports.index')->with('error', 'Gagal membuat laporan. Silakan cek log.');
+        // Pastikan hanya kabin aktif yang bisa diakses
+        if (!$cabin->status) {
+            abort(404);
         }
-    }
 
-    /**
-     * Display the details of a single report.
-     *
-     * @param  \App\Models\CabinReport  $report
-     * @return \Illuminate\View\View
-     */
-    public function show(CabinReport $report)
-    {
-        return view('admin.reports.show', [
-            'title' => 'Detail Laporan - ' . $report->report_date->format('d M Y'),
-            'report' => $report,
+        // Eager load relasi rooms yang aktif
+        $cabin->load(['rooms' => function ($query) {
+            $query->where('status', true)->orderBy('price', 'asc');
+        }]);
+        
+        $allPhotos = is_array($cabin->cabin_photos) ? $cabin->cabin_photos : [];
+        foreach ($cabin->rooms as $room) {
+            if (!empty($room->room_photos) && is_array($room->room_photos)) {
+                $allPhotos = array_merge($allPhotos, $room->room_photos);
+            }
+        }
+        
+        return view('frontend.detailcabin', [
+            'cabin' => $cabin,
+            'allPhotos' => array_unique($allPhotos),
+            'title' => $cabin->name . ' - Detail Kabin'
         ]);
     }
 }
