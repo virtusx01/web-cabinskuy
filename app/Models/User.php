@@ -117,29 +117,4 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
-    /**
-     * Get the bookings made by the user.
-     */
-    public function bookings()
-    {
-        return $this->hasMany(Booking::class, 'id_user', 'id_user');
-    }
-
-    /**
-     * Get the payments made by this user (as payer).
-     */
-    public function payments()
-    {
-        return $this->hasMany(Payment::class, 'payer_id', 'id_user'); // Assuming 'payer_id' references 'id_user'
-    }
-
-    public function confirmedBookings()
-    {
-        return $this->hasMany(Booking::class, 'confirmed_by', 'id_user');
-    }
-
-    public function rejectedBookings()
-    {
-        return $this->hasMany(Booking::class, 'rejected_by', 'id_user');
-    }
 }
