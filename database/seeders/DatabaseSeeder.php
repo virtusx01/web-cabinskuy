@@ -52,7 +52,7 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 // Data yang akan diisi HANYA JIKA user dengan email di atas belum ada
-                'id_user' => 'USR' . date('ymd') . mt_rand(1000, 9999), // Tambahkan id_user karena ini adalah primary key
+                'id_user' => 'CUS' . date('ymd') . mt_rand(1000, 9999), // Tambahkan id_user karena ini adalah primary key
                 'name' => 'Muhammad Nur Fauzan',
                 'role' => '0', 
                 'status' => true, // PERBAIKAN: Ubah 1 menjadi true (boolean)

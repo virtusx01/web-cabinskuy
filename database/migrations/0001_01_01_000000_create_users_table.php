@@ -1,5 +1,8 @@
 <?php
 
+// File: database/migrations/xxxx_xx_xx_xxxxxx_create_users_table.php
+// Catatan: Nama file migrasi akan berbeda sesuai tanggal pembuatan.
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -12,23 +15,29 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_user')->unique(); 
+            $table->id(); // Kolom ID auto-increment primary
+            $table->string('id_user')->unique(); // Kolom ID unik kustom Anda
             $table->string('name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->enum('role', ['owner','admin','customer'])->default('customer');
-            $table->boolean('status', [0, 1])->default(1);
+            $table->timestamp('email_verified_at')->nullable(); // Pindahkan ke atas agar lebih rapi
+            $table->string('password')->nullable(); // Dibuat nullable karena pengguna Google tidak punya password
+            $table->enum('role', ['owner', 'admin', 'customer'])->default('customer');
+            $table->boolean('status')->default(true); // Perbaikan sintaks. Default(true) sama dengan 1.
+            $table->string('hp', 15)->nullable(); // Dibuat nullable dan panjangnya ditambah sedikit
+            
+            // Kolom spesifik untuk Google Auth
             $table->string('google_id')->nullable();
-            $table->string('google_avatar_url')->nullable();
-            $table->string('password'); 
-            $table->string('hp', 13)->default(""); 
-            $table->string('profile_photo_path')->nullable(); 
-            $table->string('password');
+            $table->string('google_avatar_url')->nullable(); // URL untuk avatar dari Google
+
+            // Kolom bawaan Laravel
             $table->rememberToken();
             $table->timestamps();
+            
+            // Hapus kolom duplikat dan yang tidak perlu dari file asli Anda
+            // $table->string('profile_photo_path')->nullable(); // Anda bisa gunakan google_avatar_url
         });
 
+        // Tabel password_reset_tokens dan sessions tidak perlu diubah, sudah benar.
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');

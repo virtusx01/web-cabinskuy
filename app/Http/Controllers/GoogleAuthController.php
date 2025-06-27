@@ -46,12 +46,13 @@ class GoogleAuthController extends Controller
                 } else {
                     // Jika user belum ada sama sekali, buat user baru
                     $newUser = User::create([
+                        'id_user' => 'CUS' . date('ym') . mt_rand(1000, 9999), // Membuat id_user unik
                         'name' => $user->name,
                         'email' => $user->email,
                         'google_id' => $user->id,
-                        'avatar' => $user->avatar,
-                        'password' => bcrypt(Str::random(16)), // Buat password acak
-                        // Kamu bisa menambahkan kolom lain jika diperlukan
+                        'google_avatar_url' => $user->avatar,
+                        'email_verified_at' => now(), // Anggap email sudah terverifikasi oleh Google
+                        'password' => null,
                     ]);
 
                     Auth::login($newUser);
