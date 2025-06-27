@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable(); // Pindahkan ke atas agar lebih rapi
             $table->string('password')->nullable(); // Dibuat nullable karena pengguna Google tidak punya password
-            $table->enum('role', ['owner', 'admin', 'customer'])->default('customer');
+            $table->enum('role', ['superadmin', 'admin', 'customer'])->default('customer');
             $table->boolean('status')->default(true); // Perbaikan sintaks. Default(true) sama dengan 1.
             $table->string('hp', 15)->nullable(); // Dibuat nullable dan panjangnya ditambah sedikit
             

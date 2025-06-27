@@ -78,7 +78,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Cek apakah user memiliki peran 'admin'.
+     * Cek apakah user memiliki peran ''.
      *
      * @return bool
      */
@@ -92,8 +92,8 @@ class User extends Authenticatable
      *
      * @return bool
      */
-    public function isOwner(): bool
+    public function isSuperAdmin(): bool
     {
-        return $this->role === 'owner';
+        return $this->role === 'superadmin';
     }
 }

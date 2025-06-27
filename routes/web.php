@@ -4,7 +4,7 @@ use App\Http\Controllers\AdminBookingController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\App; 
 use Illuminate\Support\Facades\Session;
-use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegisterController;
@@ -71,7 +71,7 @@ Route::middleware(['auth','role:customer'])->group(function () {
 
 });
 
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin,superadmin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'adminBackend'])->name('beranda');
 
     Route::resource('/cabins', CabinController::class)->parameters(['cabins' => 'cabin']);
