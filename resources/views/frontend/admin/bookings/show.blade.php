@@ -53,6 +53,8 @@
     .bg-danger { background-color: #dc3545; }
     .bg-secondary { background-color: #6c757d; }
     .bg-info { background-color: #17a2b8; }
+    .bg-primary { background-color: #007bff; } /* Added for 'completed' status */
+
 
     .action-buttons button, .action-buttons a {
         margin-right: 10px;
@@ -158,7 +160,7 @@
 </style>
 @endpush
 
-@section('admin_content') {{-- CHANGE THIS LINE --}}
+@section('admin_content') {{-- Pastikan section ini sesuai dengan layout admin Anda --}}
 <div class="admin-page-bg">
     <div class="container">
         <h1 class="page-title">Detail Booking #{{ $booking->id_booking }}</h1>
@@ -189,7 +191,7 @@
                 <strong>Tanggal Booking:</strong> <span>{{ \Carbon\Carbon::parse($booking->booking_date)->locale('id')->isoFormat('dddd, D MMMM YYYY [pukul] HH:mm') }}</span>
             </div>
             <div class="detail-row">
-                <strong>Kabin:</strong> <span>{{ $booking->cabin->name ?? 'N/A' }} ({{ $booking->cabin->location ?? 'N/A' }})</span>
+                <strong>Kabin:</strong> <span>{{ $booking->cabin->name ?? 'N/A' }} ({{ $booking->cabin->location_address ?? 'N/A' }})</span> {{-- Pastikan menggunakan kolom location_address --}}
             </div>
             <div class="detail-row">
                 <strong>Kamar:</strong> <span>{{ $booking->room->room_name ?? 'N/A' }} (Tipe: {{ $booking->room->typeroom ?? 'N/A' }}, Biaya: {{ number_format($booking->room->price ?? 0, 0, ',', '.') }}/malam)</span>
@@ -223,7 +225,7 @@
                 <strong>Telepon:</strong> <span>{{ $booking->contact_phone ?? '-' }}</span>
             </div>
             <div class="detail-row">
-                <strong>User ID:</strong> <span>{{ $booking->user->id ?? 'Guest' }} ({{ $booking->user->name ?? 'N/A' }})</span>
+                <strong>User ID:</strong> <span>{{ $booking->user->id_user ?? 'Guest' }} ({{ $booking->user->name ?? 'N/A' }})</span> {{-- Pastikan pakai id_user --}}
             </div>
             @if($booking->special_requests)
             <div class="detail-row">
@@ -278,10 +280,10 @@
                         @foreach($booking->payments as $payment)
                         <tr>
                             <td>{{ $payment->id_payment }}</td>
-                            <td>Rp {{ number_format($payment->amount, 0, ',', '.') }}</td>
-                            <td>{{ $payment->payment_method }}</td>
+                            <td>{{ $payment->formatted_amount }}</td>
+                            <td>{{ $payment->payment_method ?? '-' }}</td>
                             <td>{{ $payment->transaction_id ?? '-' }}</td>
-                            <td><span class="badge {{ $payment->status == 'completed' ? 'badge-success' : ($payment->status == 'pending' ? 'badge-warning' : 'badge-danger') }}">{{ ucfirst($payment->status) }}</span></td>
+                            <td><span class="badge {{ $payment->getStatusBadgeClassAttribute() }}">{{ $payment->status_label }}</span></td>
                             <td>{{ \Carbon\Carbon::parse($payment->created_at)->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</td>
                         </tr>
                         @endforeach
@@ -295,17 +297,27 @@
         <div class="card action-buttons">
             <h3>Aksi Admin</h3>
             @if ($booking->status === 'pending')
+                @can('confirm', $booking) {{-- Asumsi ada policy confirm untuk Booking --}}
                 <button class="btn btn-success" onclick="openModal('confirmModal')">Konfirmasi Booking</button>
+                @endcan
+                @can('reject', $booking) {{-- Asumsi ada policy reject untuk Booking --}}
                 <button class="btn btn-danger" onclick="openModal('rejectModal')">Tolak Booking</button>
+                @endcan
             @endif
+            {{-- Tombol cancel dan delete bisa ditampilkan di berbagai status, tergantung kebijakan --}}
+            @can('cancel', $booking) {{-- Asumsi ada policy cancel untuk Booking --}}
             @if ($booking->status !== 'cancelled' && $booking->status !== 'rejected' && $booking->status !== 'completed')
                 <button class="btn btn-secondary" onclick="openModal('cancelModal')">Batalkan Booking</button>
             @endif
+            @endcan
+
+            @can('delete', $booking) {{-- Policy delete Booking, biasanya hanya superadmin --}}
             <form action="{{ route('admin.bookings.destroy', $booking->id_booking) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus booking ini secara permanen? Tindakan ini tidak bisa dibatalkan dan akan menghapus semua data terkait pembayaran.');">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn btn-danger">Hapus Permanen</button>
             </form>
+            @endcan
             <a href="{{ route('admin.bookings.index') }}" class="btn btn-info">Kembali ke Daftar Booking</a>
         </div>
     </div>

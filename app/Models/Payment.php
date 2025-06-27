@@ -21,7 +21,7 @@ class Payment extends Model
         'transaction_id',
         'payment_details',
         'status',
-        'id_user',
+        'id_user', // Pastikan ini ada dan fillable
     ];
 
     protected $casts = [
@@ -44,6 +44,7 @@ class Payment extends Model
      */
     public function user()
     {
+        // Pastikan foreign key di tabel payments dan local key di tabel users sesuai
         return $this->belongsTo(User::class, 'id_user', 'id_user');
     }
 

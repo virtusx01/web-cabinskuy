@@ -60,6 +60,7 @@
     .badge-danger { background-color: #dc3545; }
     .badge-secondary { background-color: #6c757d; }
     .badge-info { background-color: #17a2b8; }
+    .badge-primary { background-color: #007bff; } /* Added for 'completed' status */
 
     .btn {
         display: inline-block;
@@ -120,7 +121,7 @@
         color: #6c757d;
         pointer-events: none;
         background-color: #fff;
-        border-color: #dee2e6;
+        border-color: #dee2e2;
     }
 
     .filter-form {
@@ -161,10 +162,27 @@
         flex: 1;
         min-width: 150px; /* Minimum width for each filter group */
     }
+
+    .alert {
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+    }
+    .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+    }
+    .alert-success {
+        color: #155724;
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+    }
 </style>
 @endpush
 
-@section('admin_content') {{-- CHANGE THIS LINE --}}
+@section('admin_content') {{-- CHANGE THIS LINE jika layout Anda menggunakan section lain --}}
 <div class="admin-page-bg">
     <div class="container">
         <h1 class="page-title">Manajemen Booking</h1>
@@ -195,6 +213,9 @@
                         <option value="completed" {{ $currentStatus == 'completed' ? 'selected' : '' }}>Selesai</option>
                         <option value="rejected" {{ $currentStatus == 'rejected' ? 'selected' : '' }}>Ditolak</option>
                         <option value="cancelled" {{ $currentStatus == 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
+                        <option value="challenge" {{ $currentStatus == 'challenge' ? 'selected' : '' }}>Verifikasi Fraud</option>
+                        <option value="expired" {{ $currentStatus == 'expired' ? 'selected' : '' }}>Kadaluarsa</option>
+                        <option value="failed" {{ $currentStatus == 'failed' ? 'selected' : '' }}>Gagal</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -250,13 +271,14 @@
                             <td>{{ \Carbon\Carbon::parse($booking->booking_date)->format('d M Y H:i') }}</td>
                             <td>
                                 <a href="{{ route('admin.bookings.show', $booking->id_booking) }}" class="btn btn-info btn-sm">Detail</a>
-                                @if ($booking->status !== 'completed' && $booking->status !== 'rejected' && $booking->status !== 'cancelled')
-                                    <form action="{{ route('admin.bookings.destroy', $booking->id_booking) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus booking ini? Tindakan ini tidak bisa dibatalkan.');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
-                                    </form>
-                                @endif
+                                {{-- Hanya superadmin yang bisa menghapus permanen (sesuai otorisasi di controller) --}}
+                                @can('delete', $booking)
+                                <form action="{{ route('admin.bookings.destroy', $booking->id_booking) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus booking ini secara permanen? Tindakan ini tidak bisa dibatalkan.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                                </form>
+                                @endcan
                             </td>
                         </tr>
                         @empty

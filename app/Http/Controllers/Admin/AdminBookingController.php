@@ -89,16 +89,18 @@ class AdminBookingController extends Controller
      */
     public function confirm(Request $request, Booking $booking)
     {
-        // Pastikan hanya admin yang bisa melakukan ini
-        if (!Auth::check() || !Auth::user()->role == 'admin') { // Sesuaikan dengan cara Anda mengecek admin
-            abort(403, 'Akses ditolak.');
+        // Pastikan hanya admin atau superadmin yang bisa melakukan ini
+        $user = Auth::user();
+        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) { // <--- PERBAIKAN DI SINI
+            abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melakukan aksi ini.');
         }
 
         try {
-            if ($booking->confirm(Auth::id(), $request->admin_notes)) {
+            // Gunakan id_user sebagai id_admin karena foreign key di users menggunakan id_user
+            if ($booking->confirm($user->id_user, $request->admin_notes)) { // <--- Gunakan $user->id_user
                 return redirect()->back()->with('success', 'Booking berhasil dikonfirmasi.');
             } else {
-                return redirect()->back()->withErrors(['error' => 'Booking tidak dapat dikonfirmasi (mungkin statusnya sudah berubah).']);
+                return redirect()->back()->withErrors(['error' => 'Booking tidak dapat dikonfirmasi (mungkin statusnya sudah berubah atau sudah dibayar).']);
             }
         } catch (\Exception $e) {
             Log::error('Error confirming booking ' . $booking->id_booking . ': ' . $e->getMessage());
@@ -108,16 +110,13 @@ class AdminBookingController extends Controller
 
     /**
      * Menolak booking.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Booking  $booking
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function reject(Request $request, Booking $booking)
     {
-        // Pastikan hanya admin yang bisa melakukan ini
-        if (!Auth::check() || !Auth::user()->role == 'admin') {
-            abort(403, 'Akses ditolak.');
+        // Pastikan hanya admin atau superadmin yang bisa melakukan ini
+        $user = Auth::user();
+        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) { // <--- PERBAIKAN DI SINI
+            abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melakukan aksi ini.');
         }
 
         $request->validate([
@@ -125,7 +124,8 @@ class AdminBookingController extends Controller
         ]);
 
         try {
-            if ($booking->reject(Auth::id(), $request->rejection_reason, $request->admin_notes)) {
+            // Gunakan id_user sebagai id_admin
+            if ($booking->reject($user->id_user, $request->rejection_reason, $request->admin_notes)) { // <--- Gunakan $user->id_user
                 return redirect()->back()->with('success', 'Booking berhasil ditolak.');
             } else {
                 return redirect()->back()->withErrors(['error' => 'Booking tidak dapat ditolak (mungkin statusnya sudah berubah).']);
@@ -138,17 +138,13 @@ class AdminBookingController extends Controller
 
     /**
      * Membatalkan booking dari sisi admin.
-     * Ini berbeda dengan pembatalan oleh user, mungkin memiliki hak istimewa lebih.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Booking  $booking
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function cancel(Request $request, Booking $booking)
     {
-        // Pastikan hanya admin yang bisa melakukan ini
-        if (!Auth::check() || !Auth::user()->role == 'admin') {
-            abort(403, 'Akses ditolak.');
+        // Pastikan hanya admin atau superadmin yang bisa melakukan ini
+        $user = Auth::user();
+        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) { // <--- PERBAIKAN DI SINI
+            abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melakukan aksi ini.');
         }
 
         $request->validate([
@@ -156,14 +152,13 @@ class AdminBookingController extends Controller
         ]);
 
         try {
-            // Admin bisa membatalkan booking di berbagai status, tergantung kebijakan
-            // Jika Anda ingin membatasi hanya status tertentu, tambahkan logika di sini.
-            // Contoh: $booking->status === 'confirmed' || $booking->status === 'pending'
+            // Anda bisa menambahkan 'admin_notes' ke fungsi cancel di model Booking jika diperlukan
+            // Atau update langsung di sini seperti yang sudah Anda lakukan sebelumnya
             if ($booking->update([
                 'status' => 'cancelled',
                 'cancelled_at' => now(),
                 'cancellation_reason' => $request->cancellation_reason,
-                'admin_notes' => $request->admin_notes, // Admin bisa menambahkan catatan
+                'admin_notes' => $request->admin_notes, // Catatan admin untuk pembatalan
             ])) {
                 return redirect()->back()->with('success', 'Booking berhasil dibatalkan oleh admin.');
             } else {
@@ -177,16 +172,13 @@ class AdminBookingController extends Controller
 
     /**
      * Menghapus booking secara permanen.
-     * PERHATIAN: Gunakan dengan hati-hati! Ini akan menghapus record secara permanen.
-     *
-     * @param  \App\Models\Booking  $booking
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Booking $booking)
     {
-        // Pastikan hanya admin yang bisa melakukan ini
-        if (!Auth::check() || !Auth::user()-> role == 'admin') {
-            abort(403, 'Akses ditolak.');
+        // Pastikan hanya owner (superadmin) yang bisa menghapus permanen
+        $user = Auth::user();
+        if (!$user || $user->role !== 'superadmin') { // <--- PERBAIKAN DI SINI, HANYA SUPERADMIN
+            abort(403, 'Akses ditolak. Hanya owner yang dapat menghapus booking secara permanen.');
         }
 
         try {
