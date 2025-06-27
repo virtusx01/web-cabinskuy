@@ -11,10 +11,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias([
-            'auth' => \App\Http\Middleware\Authenticate::class,
-            'role' => \App\Http\Middleware\CheckUserRole::class, // Tambahkan baris ini
-        ]);
+        
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
