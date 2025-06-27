@@ -13,6 +13,21 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        User::firstOrCreate(
+            [
+                // Kriteria untuk mencari user (email harus unik)
+                'email' => 'owner@gmail.com'
+            ],
+            [
+                // Data yang akan diisi HANYA JIKA user dengan email di atas belum ada
+                'id_user' => 'OWN' . date('ymd') . mt_rand(1000, 9999), // Tambahkan id_user karena ini adalah primary key
+                'name' => 'Owner',
+                'role' => 'owner',
+                'status' => true, // PERBAIKAN: Ubah 1 menjadi true (boolean)
+                'hp' => '0812345678901',
+                'password' => bcrypt('owner123'),
+            ]
+        );
         // Membuat atau mencari user admin
         User::firstOrCreate(
             [
