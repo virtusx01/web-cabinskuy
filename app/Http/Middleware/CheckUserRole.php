@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckUserRole
@@ -13,22 +12,26 @@ class CheckUserRole
      * Handle an incoming request.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  string  ...$roles
      */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        if (!Auth::check()) {
-            return redirect()->route('backend.login')->with('error', 'Anda perlu login untuk mengakses halaman ini.');
+        // Pastikan user sudah login
+        if (! $request->user()) {
+            // Jika belum login, bisa diarahkan ke halaman login
+            return redirect('login');
         }
 
-        $user = Auth::user();
-
+        // Loop melalui role yang diizinkan yang dikirim dari route
         foreach ($roles as $role) {
-            if ($user->role === $role) {
+            // Ganti 'role' dengan nama kolom di tabel user Anda
+            // Contoh: if ($request->user()->role == $role)
+            if ($request->user()->hasRole($role)) { // Asumsi Anda punya method hasRole() di model User
                 return $next($request);
             }
         }
 
-        // If the user's role does not match any of the allowed roles
-        return redirect()->route('frontend.beranda')->with('error', 'Anda tidak memiliki izin untuk mengakses halaman ini.');
+        // Jika user tidak punya role yang diizinkan, tampilkan halaman 403 Forbidden
+        abort(403, 'UNAUTHORIZED ACTION.');
     }
 }

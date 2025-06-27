@@ -51,7 +51,7 @@ Route::get('/api/rooms-by-cabin', [BookingController::class, 'getRoomsByCabin'])
 Route::post('/midtrans-notification', [PaymentController::class, 'handleNotification'])
     ->name('midtrans.notification');
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth','role:customer'])->group(function () {
     Route::get('/profile', [UserController::class, 'showProfile'])->name('profile.user.show');
     Route::get('/profile/edit', [UserController::class, 'editProfile'])->name('profile.user.edit');
     Route::post('/profile/update', [UserController::class, 'updateProfile'])->name('profile.user.update');
