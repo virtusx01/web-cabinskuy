@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => CheckRole::class  // <--- DI SINI MASALAHNYA!
             // Harusnya ada koma setelah CheckRole::class
         ]);
+
+        $middleware->validateCsrfTokens(except: [
+        'api/midtrans-notification', // Or 'midtrans-notification' if no /api prefix
+    ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -48,8 +48,11 @@ Route::get('/api/rooms-by-cabin', [BookingController::class, 'getRoomsByCabin'])
 
 // PERBAIKAN: Pindahkan webhook Midtrans ke luar middleware auth
 // Webhook harus dapat diakses tanpa autentikasi karena dipanggil oleh server Midtrans
-Route::post('/midtrans-notification', [PaymentController::class, 'handleNotification'])
-    ->name('midtrans.notification');
+Route::prefix('api')->group(function () {
+    // Webhook should be accessible without authentication
+    Route::post('/midtrans-notification', [PaymentController::class, 'handleNotification'])
+        ->name('midtrans.notification'); // Name this whatever you prefer, 'api.midtrans.notification' also works
+});
 
 Route::middleware(['auth','role:customer'])->group(function () {
     Route::get('/profile', [UserController::class, 'showProfile'])->name('profile.user.show');
