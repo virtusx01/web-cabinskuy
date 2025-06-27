@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Cabin; // <-- 1. IMPORT THE CABIN MODEL
+use App\Models\Cabin; //
 
-class BerandaController extends Controller
+class BerandaController
 {
     public function berandaFrontend()
     {
@@ -26,6 +26,7 @@ class BerandaController extends Controller
         // The 'compact' function is a clean way to create an array of variables.
         return view('frontend.beranda', compact('provinces', 'featuredCabins'));
     }
+
     public function getRegencies(Request $request)
     {
         // Validate that the province parameter exists
