@@ -393,144 +393,6 @@
 </div>
 @endsection
 
-@section('content')
-<div class="payment-page-bg">
-    <div class="container">
-        <nav class="breadcrumb">
-            <a href="{{ route('frontend.beranda') }}">Home</a> >
-            <a href="{{ route('frontend.booking.index') }}">My Bookings</a> >
-            <span>Pembayaran Booking #{{ $booking->id_booking }}</span>
-        </nav>
-
-        <h1 class="page-title">Pembayaran Booking Anda</h1>
-
-        @if ($errors->any())
-            <div class="alert alert-danger">
-                @foreach ($errors->all() as $error)
-                    <div><i class="fas fa-exclamation-triangle"></i> {{ $error }}</div>
-                @endforeach
-            </div>
-        @endif
-
-        @if (session('success'))
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i> {{ session('success') }}
-            </div>
-        @endif
-        @if (session('error'))
-            <div class="alert alert-danger">
-                <i class="fas fa-times-circle"></i> {{ session('error') }}
-            </div>
-        @endif
-
-        <div class="payment-layout">
-            <div class="payment-options-section">
-                <form id="payment-form" onsubmit="event.preventDefault(); initiatePayment();">
-                    @csrf
-                    <h3>Lanjutkan Pembayaran Melalui Midtrans</h3>
-
-                    <p>Klik tombol di bawah untuk melanjutkan ke proses pembayaran aman via Midtrans. Anda akan dapat memilih metode pembayaran (transfer bank, kartu kredit, e-wallet, dll.) di pop-up Midtrans.</p>
-
-                    <button type="submit" class="btn-process-payment" id="process-payment-btn">
-                        Bayar Sekarang Rp {{ number_format($booking->total_price, 0, ',', '.') }}
-                    </button>
-                </form>
-            </div>
-
-            <div class="order-summary-card">
-                <h3>Ringkasan Booking</h3>
-
-                @php
-                    function safeJsonDecode($data) {
-                        if (is_string($data)) {
-                            $decoded = json_decode($data, true);
-                            if (is_array($decoded) && !empty($decoded) && is_string($decoded[0] ?? null)) {
-                                $decoded = json_decode($decoded[0], true);
-                            }
-                            return is_array($decoded) ? $decoded : [];
-                        }
-                        return is_array($data) ? $data : [];
-                    }
-
-                    $roomPhotoUrl = 'https://placehold.co/100x80/e9f5e9/333333?text=Room'; // Default placeholder
-                    if ($booking->room && !empty($booking->room->room_photos)) {
-                        $photos = safeJsonDecode($booking->room->room_photos);
-                        if (!empty($photos) && is_string($photos[0])) {
-                            // Asumsi path foto disimpan relatif dari storage/app/public
-                            $roomPhotoUrl = asset('storage/' . str_replace('\\', '/', $photos[0]));
-                        }
-                    }
-
-                    $cabinRegency = $booking->cabin->regency ?? 'N/A';
-                    $cabinProvince = $booking->cabin->province ?? 'N/A';
-                    $displayLocation = '';
-                    if ($cabinRegency !== 'N/A' || $cabinProvince !== 'N/A') {
-                        $displayLocation = ($cabinRegency !== 'N/A' ? $cabinRegency : '') .
-                                            ($cabinRegency !== 'N/A' && $cabinProvince !== 'N/A' ? ', ' : '') .
-                                            ($cabinProvince !== 'N/A' ? $cabinProvince : '');
-                    }
-                    if (empty($displayLocation)) {
-                        $displayLocation = 'Lokasi Tidak Diketahui'; // Fallback if both are N/A
-                    }
-                @endphp
-
-                <div class="summary-room-info">
-                    <img src="{{ $roomPhotoUrl }}" alt="{{ $booking->room->typeroom ?? 'N/A' }}">
-                    <div class="summary-room-details">
-                        <h4>{{ $booking->room->typeroom ?? 'N/A' }} Kabin</h4>
-                        <p>{{ $booking->cabin->name ?? 'N/A' }}</p>
-                        <p>📍 {{ $displayLocation }}</p>
-                    </div>
-                </div>
-
-                <div class="summary-dates">
-                    <h5>Detail Tanggal</h5>
-                    <div>
-                        <span>Check-in:</span>
-                        <span>{{ \Carbon\Carbon::parse($booking->check_in_date)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</span>
-                    </div>
-                    <div>
-                        <span>Check-out:</span>
-                        <span>{{ \Carbon\Carbon::parse($booking->check_out_date)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</span>
-                    </div>
-                    <div>
-                        <span>Jumlah Malam:</span>
-                        <span>{{ $booking->total_nights }}</span>
-                    </div>
-                    <div>
-                        <span>Jumlah Tamu:</span>
-                        <span>{{ $booking->total_guests }}</span>
-                    </div>
-                </div>
-
-                <div class="price-details">
-                    <div class="price-row">
-                        <span>Rp {{ number_format($booking->room->price ?? 0, 0,',','.') }} x {{ $booking->total_nights }} malam</span>
-                        <span>Rp {{ number_format(($booking->room->price ?? 0) * $booking->total_nights, 0,',','.') }}</span>
-                    </div>
-                    <div class="price-row">
-                        <span>Pajak & Biaya Layanan</span>
-                        <span>Rp 0</span> {{-- Assuming 0 for now, adjust if you have actual tax/service fees --}}
-                    </div>
-                    <div class="price-row total">
-                        <span>Total Pembayaran</span>
-                        <span>Rp {{ number_format($booking->total_price, 0, ',', '.') }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="customAlertModal" class="custom-modal"> {{-- Set display: none directly --}}
-    <div class="custom-modal-content">
-        <h4>Pemberitahuan!</h4>
-        <p id="customAlertMessage">Silakan pilih metode pembayaran terlebih dahulu.</p>
-        <button class="custom-modal-button" onclick="document.getElementById('customAlertModal').style.display='none'">OK</button>
-    </div>
-</div>
-@endsection
-
 @push('scripts')
 {{-- Midtrans Snap.js script --}}
 <script type="text/javascript"
@@ -561,9 +423,9 @@
         })
         .then(response => {
             if (!response.ok) {
-                // Jika response tidak OK (misalnya 500 server error, 422 validation error)
+                // If response is not OK (e.g., 500 server error, 422 validation error)
                 return response.json().then(errorData => {
-                    throw new Error(errorData.error || errorData.message || 'Server error occurred.');
+                    throw new Error(errorData.message || 'Server error occurred.');
                 });
             }
             return response.json();
@@ -575,14 +437,12 @@
                     onSuccess: function(result){
                         showCustomModal("Pembayaran berhasil! Silakan tunggu sebentar...");
                         setTimeout(() => {
-                            // Redirect ke halaman detail booking setelah sukses
                             window.location.href = '{{ route('frontend.booking.show', $booking->id_booking) }}';
                         }, 2000);
                     },
                     onPending: function(result){
                         showCustomModal("Pembayaran Anda sedang menunggu. Silakan selesaikan pembayaran di Midtrans. Anda akan diarahkan ke detail booking.");
                         setTimeout(() => {
-                            // Redirect ke halaman detail booking setelah pending
                             window.location.href = '{{ route('frontend.booking.show', $booking->id_booking) }}';
                         }, 2000);
                     },

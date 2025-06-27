@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cabin; // Pastikan Cabin di-import jika digunakan
+use App\Models\Cabin;
 use App\Models\CabinRoom;
 use App\Models\Booking;
 use Illuminate\Http\Request;
@@ -77,10 +77,10 @@ class BookingController extends Controller
             }
 
             return view('frontend.booking', [
-                'room'         => $room,
-                'cabin'        => $room->cabin,
+                'room'           => $room,
+                'cabin'          => $room->cabin,
                 'bookingDetails' => $bookingDetails,
-                'title'        => 'Konfirmasi Booking Anda'
+                'title'          => 'Konfirmasi Booking Anda'
             ]);
 
         } catch (\Exception $e) {
@@ -125,8 +125,8 @@ class BookingController extends Controller
             return response()->json([
                 'available' => $isAvailable,
                 'message'   => $isAvailable
-                               ? "Kamar tersedia untuk tanggal yang Anda pilih!"
-                               : "Maaf, kamar ini sudah dipesan pada tanggal tersebut.",
+                                ? "Kamar tersedia untuk tanggal yang Anda pilih!"
+                                : "Maaf, kamar ini sudah dipesan pada tanggal tersebut.",
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -155,15 +155,15 @@ class BookingController extends Controller
             DB::beginTransaction();
 
             $validated = $request->validate([
-                'id_room'          => 'required|exists:cabin_rooms,id_room',
-                'checkin_date'     => 'required|date|after_or_equal:today',
-                'checkout_date'    => 'required|date|after:checkin_date',
-                'total_guests'     => 'required|integer|min:1',
-                'contact_name'     => 'required|string|max:255',
-                'contact_email'    => 'required|email|max:255',
-                'contact_phone'    => 'nullable|string|max:20',
-                'total_price'      => 'required|numeric|min:0',
-                'special_requests' => 'nullable|string|max:1000',
+                'id_room'            => 'required|exists:cabin_rooms,id_room',
+                'checkin_date'       => 'required|date|after_or_equal:today',
+                'checkout_date'      => 'required|date|after:checkin_date',
+                'total_guests'       => 'required|integer|min:1',
+                'contact_name'       => 'required|string|max:255',
+                'contact_email'      => 'required|email|max:255',
+                'contact_phone'      => 'nullable|string|max:20',
+                'total_price'        => 'required|numeric|min:0',
+                'special_requests'   => 'nullable|string|max:1000',
             ]);
 
             $room = CabinRoom::with('cabin')->findOrFail($validated['id_room']);
@@ -216,9 +216,9 @@ class BookingController extends Controller
                 'check_in_date'  => $validated['checkin_date'],
                 'check_out_date' => $validated['checkout_date'],
                 'checkin_room'   => 1, // Asumsi 1 unit kamar per booking, jika tidak, sesuaikan.
-                                      // Jika `checkin_room` mengacu pada jumlah "slot" atau "kapasitas" yang diambil,
-                                      // maka harusnya `total_guests`. Ini perlu klarifikasi.
-                                      // Untuk sementara, saya biarkan 1 unit per booking jika slot_room adalah jumlah unit fisik.
+                                            // Jika `checkin_room` mengacu pada jumlah "slot" atau "kapasitas" yang diambil,
+                                            // maka harusnya `total_guests`. Ini perlu klarifikasi.
+                                            // Untuk sementara, saya biarkan 1 unit per booking jika slot_room adalah jumlah unit fisik.
                 'total_guests'   => $validated['total_guests'],
                 'total_nights'   => $totalNights,
                 'total_price'    => $expectedTotalprice, // Gunakan harga dari server untuk konsistensi
@@ -361,5 +361,22 @@ class BookingController extends Controller
                 'message' => 'Terjadi kesalahan saat mengambil data ruangan.'
             ], 500);
         }
+    }
+
+    /**
+     * API untuk mendapatkan status booking (berdasarkan Booking ID).
+     * Akan digunakan oleh polling di frontend.
+     */
+    public function getBookingStatus(Booking $booking)
+    {
+        // Pastikan hanya user yang berhak yang bisa mengakses
+        if ($booking->id_user !== (Auth::user()->id_user ?? null)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        return response()->json([
+            'status'       => $booking->status,
+            'status_label' => $booking->status_label,
+        ]);
     }
 }

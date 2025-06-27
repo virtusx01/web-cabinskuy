@@ -10,11 +10,29 @@ class Booking extends Model
 {
     use HasFactory;
 
+    /**
+     * Nama tabel yang terhubung dengan model.
+     */
     protected $table = 'bookings';
+
+    /**
+     * Primary key untuk model ini.
+     */
     protected $primaryKey = 'id_booking';
+
+    /**
+     * Auto-incrementing ID.
+     */
     public $incrementing = true;
+
+    /**
+     * The "type" of the auto-incrementing ID.
+     */
     protected $keyType = 'int';
 
+    /**
+     * Atribut yang dapat diisi secara massal.
+     */
     protected $fillable = [
         'id_user',
         'id_cabin',
@@ -42,6 +60,9 @@ class Booking extends Model
         'cancellation_reason',
     ];
 
+    /**
+     * Tipe data casting.
+     */
     protected $casts = [
         'check_in_date'  => 'date',
         'check_out_date' => 'date',
@@ -56,42 +77,66 @@ class Booking extends Model
 
     // --- RELATIONSHIPS ---
 
+    /**
+     * Relasi ke model User (pemesan).
+     */
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user', 'id_user');
     }
 
+    /**
+     * Relasi ke model Cabin.
+     */
     public function cabin()
     {
         return $this->belongsTo(Cabin::class, 'id_cabin', 'id_cabin');
     }
 
+    /**
+     * Relasi ke model CabinRoom.
+     */
     public function room()
     {
         return $this->belongsTo(CabinRoom::class, 'id_room', 'id_room');
     }
 
+    /**
+     * Relasi ke User yang mengkonfirmasi (admin).
+     */
     public function confirmedBy()
     {
         return $this->belongsTo(User::class, 'confirmed_by', 'id_user');
     }
 
+    /**
+     * Relasi ke User yang menolak (admin).
+     */
     public function rejectedBy()
     {
         return $this->belongsTo(User::class, 'rejected_by', 'id_user');
     }
 
+    /**
+     * Relasi ke model Payment.
+     */
     public function payments()
     {
         return $this->hasMany(Payment::class, 'id_booking', 'id_booking');
     }
 
+    /**
+     * Relasi ke Payment terbaru.
+     */
     public function latestPayment()
     {
         return $this->hasOne(Payment::class, 'id_booking', 'id_booking')
                     ->latest();
     }
 
+    /**
+     * Relasi ke Payment yang berhasil.
+     */
     public function successfulPayment()
     {
         return $this->hasOne(Payment::class, 'id_booking', 'id_booking')
@@ -100,26 +145,42 @@ class Booking extends Model
 
     // --- SCOPES ---
 
+    /**
+     * Scope untuk booking yang pending.
+     */
     public function scopePending($query)
     {
         return $query->whereIn('status', ['pending', 'challenge']);
     }
 
+    /**
+     * Scope untuk booking yang sudah dikonfirmasi.
+     */
     public function scopeConfirmed($query)
     {
         return $query->where('status', 'confirmed');
     }
 
+    /**
+     * Scope untuk booking yang berhasil (completed).
+     */
     public function scopeSuccessful($query)
     {
         return $query->where('status', 'completed');
     }
 
+    /**
+     * Scope untuk filter berdasarkan status.
+     */
     public function scopeWithStatus($query, $status)
     {
         return $query->where('status', $status);
     }
 
+    /**
+     * Scope untuk booking yang aktif pada rentang tanggal tertentu.
+     * PENTING: Untuk mengecek ketersediaan slot.
+     */
     public function scopeActiveOnDateRange($query, $checkIn, $checkOut)
     {
         return $query->whereIn('status', ['pending', 'confirmed', 'challenge'])
@@ -131,6 +192,9 @@ class Booking extends Model
 
     // --- ACCESSORS ---
 
+    /**
+     * Accessor untuk label status yang user-friendly.
+     */
     public function getStatusLabelAttribute()
     {
         $statusLabels = [
@@ -146,6 +210,9 @@ class Booking extends Model
         return $statusLabels[$this->status] ?? 'Status Tidak Dikenal';
     }
 
+    /**
+     * Accessor untuk class badge status.
+     */
     public function getStatusBadgeClassAttribute()
     {
         $statusClasses = [
@@ -161,6 +228,9 @@ class Booking extends Model
         return $statusClasses[$this->status] ?? 'badge-secondary';
     }
 
+    /**
+     * Accessor untuk format harga.
+     */
     public function getFormattedTotalPriceAttribute()
     {
         return 'Rp ' . number_format($this->total_price, 0, ',', '.');
@@ -168,11 +238,17 @@ class Booking extends Model
 
     // --- BUSINESS LOGIC METHODS ---
 
+    /**
+     * Cek apakah booking sudah lunas.
+     */
     public function isPaid(): bool
     {
         return $this->successfulPayment()->exists();
     }
 
+    /**
+     * Mengambil total jumlah yang telah dibayarkan.
+     */
     public function getPaidAmount(): float
     {
         return (float) $this->payments()
@@ -180,33 +256,51 @@ class Booking extends Model
                              ->sum('amount');
     }
 
+    /**
+     * Method untuk mengecek apakah ada payment yang sedang pending.
+     */
     public function hasPendingPayment(): bool
     {
         return $this->payments()
-                     ->whereIn('status', ['pending', 'challenge'])
-                     ->exists();
+                    ->whereIn('status', ['pending', 'challenge'])
+                    ->exists();
     }
 
+    /**
+     * Method untuk cek apakah booking ini sedang pending.
+     */
     public function isPending(): bool
     {
         return in_array($this->status, ['pending', 'challenge']);
     }
 
+    /**
+     * Method untuk cek apakah booking ini berhasil (completed).
+     */
     public function isSuccessful(): bool
     {
         return $this->status === 'completed';
     }
 
+    /**
+     * Method untuk cek apakah booking ini gagal.
+     */
     public function isFailed(): bool
     {
         return in_array($this->status, ['failed', 'rejected', 'cancelled', 'expired']);
     }
 
+    /**
+     * Cek apakah booking bisa dibatalkan oleh user.
+     */
     public function canBeCancelled(): bool
     {
         return in_array($this->status, ['pending', 'challenge']);
     }
 
+    /**
+     * Konfirmasi booking.
+     */
     public function confirm($adminId, $notes = null): bool
     {
         if (!in_array($this->status, ['pending', 'challenge'])) {
@@ -221,6 +315,9 @@ class Booking extends Model
         ]);
     }
 
+    /**
+     * Tolak booking.
+     */
     public function reject($adminId, $reason, $notes = null): bool
     {
         if (!in_array($this->status, ['pending', 'challenge'])) {
@@ -236,21 +333,25 @@ class Booking extends Model
         ]);
     }
 
+    /**
+     * Batalkan booking.
+     */
     public function cancel($reason = null): bool
     {
-        // Admin cancel method in AdminBookingController might directly update status.
-        // This method is primarily for user-initiated cancel.
         if (!$this->canBeCancelled()) {
             return false;
         }
         
         return $this->update([
-            'status'            => 'cancelled',
-            'cancelled_at'      => now(),
+            'status'             => 'cancelled',
+            'cancelled_at'       => now(),
             'cancellation_reason' => $reason ?? 'Dibatalkan oleh user',
         ]);
     }
 
+    /**
+     * Method untuk menandai booking sebagai expired.
+     */
     public function markAsExpired(): bool
     {
         return $this->update([
@@ -258,6 +359,9 @@ class Booking extends Model
         ]);
     }
 
+    /**
+     * Method untuk menandai booking sebagai failed.
+     */
     public function markAsFailed(): bool
     {
         return $this->update([
@@ -265,6 +369,9 @@ class Booking extends Model
         ]);
     }
 
+    /**
+     * Method untuk menandai booking sebagai completed.
+     */
     public function markAsCompleted(): bool
     {
         return $this->update([

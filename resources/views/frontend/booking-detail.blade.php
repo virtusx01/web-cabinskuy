@@ -232,7 +232,7 @@
     <div class="container">
         <nav class="breadcrumb">
             <a href="{{ route('frontend.beranda') }}">Home</a> >
-            <a href="{{ route('frontend.booking.index') }}">My Bookings</a> >
+            <a href="{{ route('frontend.booking.index') }}">My Bookings</a> > {{-- CORRECTED LINE --}}
             <span>Detail Booking #{{ $booking->id_booking }}</span>
         </nav>
 
@@ -261,7 +261,12 @@
                         {{ $booking->status_label }}
                     </span>
                 </div>
-                {{-- KODE POLLING SEKARANG DIHAPUS DARI SINI --}}
+                @if ($booking->status === 'pending' || $booking->status === 'challenge')
+                    <div id="payment-polling-status" class="alert alert-info" style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_V8m1{transform-origin:center;animation:spinner_zKoa 2s linear infinite}.spinner_V8m1 circle{stroke-linecap:round;animation:spinner_YpZS 1.5s ease-in-out infinite}@keyframes spinner_zKoa{100%{transform:rotate(360deg)}}@keyframes spinner_YpZS{0%{stroke-dasharray:0 150;stroke-dashoffset:0}47.5%{stroke-dasharray:42 150;stroke-dashoffset:-16}95%,100%{stroke-dasharray:42 150;stroke-dashoffset:-59}}</style><g class="spinner_V8m1"><circle cx="12" cy="12" r="9.5" fill="none" stroke="#229954" stroke-width="3"></circle></g></svg>
+                        <span>Menunggu konfirmasi pembayaran. Halaman akan diperbarui secara otomatis...</span>
+                    </div>
+                @endif
                 <div class="detail-item">
                     <strong>Tanggal Booking:</strong>
                     <span>{{ \Carbon\Carbon::parse($booking->booking_date)->locale('id')->isoFormat('dddd, D MMMM YYYY, HH:mm') }} WIB</span>
@@ -287,45 +292,19 @@
             <div class="detail-section">
                 <h3>Informasi Kabin & Kamar</h3>
                 <div class="cabin-room-info">
-                    @php
-                        // Function to safely decode JSON strings for photos
-                        function safeJsonDecodeBookingDetail($data) {
-                            if (is_string($data)) {
-                                $decoded = json_decode($data, true);
-                                // Check for double encoding if the first decode result is still a string array
-                                if (is_array($decoded) && !empty($decoded) && is_string($decoded[0] ?? null)) {
-                                    $decoded = json_decode($decoded[0], true);
-                                }
-                                return is_array($decoded) ? $decoded : [];
-                            }
-                            return is_array($data) ? $data : [];
-                        }
-
-                        $roomPhotoUrl = 'https://placehold.co/180x120/e9f5e9/333333?text=Room'; // Default placeholder
-                        if ($booking->room && !empty($booking->room->room_photos)) {
-                            $photos = safeJsonDecodeBookingDetail($booking->room->room_photos);
-                            if (!empty($photos) && is_string($photos[0])) {
-                                // Asumsi path foto disimpan relatif dari storage/app/public
-                                $roomPhotoUrl = asset('storage/' . str_replace('\\', '/', $photos[0]));
-                            }
-                        }
-                        
-                        $cabinLocation = ($booking->cabin->regency ?? 'N/A') . ', ' . ($booking->cabin->province ?? 'N/A');
-                        if ($cabinLocation === 'N/A, N/A') $cabinLocation = 'Lokasi Tidak Diketahui';
-                    @endphp
-                    <img src="{{ $roomPhotoUrl }}"
-                            alt="{{ $booking->room->typeroom ?? 'N/A' }}">
+                    <img src="{{ !empty($booking->room->room_photos) ? asset($booking->room->room_photos[0]) : 'https://via.placeholder.com/180x120/e9f5e9/333333?text=Room' }}"
+                         alt="{{ $booking->room->typeroom }}">
                     <div class="cabin-room-details">
-                        <h4>{{ $booking->room->typeroom ?? 'N/A' }} Kabin</h4>
-                        <p>Di: {{ $booking->cabin->name ?? 'N/A' }}</p>
-                        <p>Lokasi: {{ $cabinLocation }}</p>
+                        <h4>{{ $booking->room->typeroom }} Kabin</h4>
+                        <p>Di: {{ $booking->cabin->name }}</p>
+                        <p>Lokasi: {{ $booking->cabin->location }}</p>
                         <ul>
-                            <li>Kapasitas: {{ $booking->room->max_guests ?? 'N/A' }} tamu</li> {{-- Menggunakan max_guests dari room --}}
-                            <li>Biaya per malam: Rp {{ number_format($booking->room->price ?? 0, 0, ',', '.') }}</li>
+                            <li>Kapasitas: {{ $booking->room->slot_room }} tamu</li>
+                            <li>Biaya per malam: Rp {{ number_format($booking->room->price, 0, ',', '.') }}</li>
                         </ul>
                     </div>
                 </div>
-                <p style="font-size:0.9em; color:#777;">{{ $booking->room->description ?? 'Tidak ada deskripsi kamar.' }}</p>
+                <p style="font-size:0.9em; color:#777;">{{ $booking->room->description }}</p>
             </div>
 
             <div class="detail-section">
@@ -343,111 +322,130 @@
                     <span>{{ $booking->contact_phone ?: '-' }}</span>
                 </div>
                 <div class="detail-item">
-                    <strong>User ID:</strong> <span>{{ $booking->user->id_user ?? 'Guest' }} ({{ $booking->user->name ?? 'N/A' }})</span> {{-- Pastikan menggunakan id_user --}}
-                </div>
-                <div class="detail-item">
                     <strong>Permintaan Khusus:</strong>
                     <span>{{ $booking->special_requests ?: '-' }}</span>
                 </div>
             </div>
 
-            @if ($booking->confirmed_at || $booking->rejected_at || $booking->cancelled_at || $booking->admin_notes)
+            @if ($booking->status === 'rejected' || $booking->status === 'cancelled')
             <div class="detail-section">
-                <h3>Log Admin</h3>
-                <div class="detail-item">
-                    <strong>Dikonfirmasi Oleh:</strong> <span>{{ $booking->confirmedBy->name ?? '-' }} pada {{ $booking->confirmed_at ? \Carbon\Carbon::parse($booking->confirmed_at)->locale('id')->isoFormat('D MMMM YYYY, HH:mm') : '-' }}</span>
-                </div>
-                <div class="detail-item">
-                    <strong>Ditolak Oleh:</strong> <span>{{ $booking->rejectedBy->name ?? '-' }} pada {{ $booking->rejected_at ? \Carbon\Carbon::parse($booking->rejected_at)->locale('id')->isoFormat('D MMMM YYYY, HH:mm') : '-' }}</span>
-                </div>
-                @if($booking->rejection_reason)
-                <div class="detail-item">
-                    <strong>Alasan Penolakan:</strong> <span>{{ $booking->rejection_reason }}</span>
-                </div>
+                <h3>Informasi Pembatalan/Penolakan</h3>
+                @if ($booking->status === 'rejected')
+                    <div class="detail-item">
+                        <strong>Alasan Penolakan:</strong>
+                        <span>{{ $booking->rejection_reason ?: '-' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Ditolak Oleh:</strong>
+                        <span>{{ $booking->rejectedBy ? $booking->rejectedBy->name : 'Sistem' }} pada {{ \Carbon\Carbon::parse($booking->rejected_at)->locale('id')->isoFormat('dddd, D MMMM YYYY, HH:mm') }} WIB</span>
+                    </div>
                 @endif
-                <div class="detail-item">
-                    <strong>Dibatalkan Oleh (User):</strong> <span>{{ $booking->cancelled_at ? 'Pada ' . \Carbon\Carbon::parse($booking->cancelled_at)->locale('id')->isoFormat('D MMMM YYYY, HH:mm') : '-' }}</span>
-                </div>
-                @if($booking->cancellation_reason)
-                <div class="detail-item">
-                    <strong>Alasan Pembatalan:</strong> <span>{{ $booking->cancellation_reason }}</span>
-                </div>
+                @if ($booking->status === 'cancelled')
+                    <div class="detail-item">
+                        <strong>Alasan Pembatalan:</strong>
+                        <span>{{ $booking->cancellation_reason ?: '-' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Dibatalkan Pada:</strong>
+                        <span>{{ \Carbon\Carbon::parse($booking->cancelled_at)->locale('id')->isoFormat('dddd, D MMMM YYYY, HH:mm') }} WIB</span>
+                    </div>
                 @endif
-                @if($booking->admin_notes)
-                <div class="detail-item">
-                    <strong>Catatan Admin:</strong> <span>{{ $booking->admin_notes }}</span>
-                </div>
+                @if ($booking->admin_notes)
+                    <div class="detail-item">
+                        <strong>Catatan Admin:</strong>
+                        <span>{{ $booking->admin_notes }}</span>
+                    </div>
                 @endif
             </div>
             @endif
-
-            <div class="detail-section">
-                <h3>Riwayat Pembayaran</h3>
-                @if($booking->payments->isNotEmpty())
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>ID Pembayaran</th>
-                                <th>Jumlah</th>
-                                <th>Metode</th>
-                                <th>ID Transaksi</th>
-                                <th>Status</th>
-                                <th>Tanggal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($booking->payments as $payment)
-                            <tr>
-                                <td>{{ $payment->id_payment }}</td>
-                                <td>{{ $payment->formatted_amount }}</td>
-                                <td>{{ $payment->payment_method ?? '-' }}</td>
-                                <td>{{ $payment->transaction_id ?? '-' }}</td>
-                                <td><span class="badge {{ $payment->getStatusBadgeClassAttribute() }}">{{ $payment->status_label }}</span></td>
-                                <td>{{ \Carbon\Carbon::parse($payment->created_at)->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                @else
-                    <p>Belum ada pembayaran untuk booking ini.</p>
-                @endif
-            </div>
 
             <div class="detail-item total-price">
                 <strong>Total Pembayaran:</strong>
                 <span>{{ $booking->formatted_total_price }}</span>
             </div>
 
-            <div class="action-buttons">
-                @if(in_array($booking->status, ['pending', 'challenge']))
-                    <a href="{{ route('frontend.payment.show', $booking->id_booking) }}" class="btn btn-primary">Lanjutkan Pembayaran</a>
-                    
-                    <form action="{{ route('frontend.payment.change', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mengganti metode pembayaran? Transaksi yang sedang berjalan akan dibatalkan.');">
-                        @csrf
-                        <button type="submit" class="btn btn-secondary">Ganti Metode Pembayaran</button>
-                    </form>
+            {{-- Ganti keseluruhan div .action-buttons di booking_detail.blade.php --}}
 
-                    <form action="{{ route('frontend.booking.cancel', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?');">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="btn btn-danger">Batalkan Booking</button>
-                    </form>
+<div class="action-buttons">
+    @if(in_array($booking->status, ['pending', 'challenge']))
+        {{-- Tombol utama untuk melanjutkan pembayaran --}}
+        <a href="{{ route('frontend.payment.show', $booking->id_booking) }}" class="btn btn-primary">Lanjutkan Pembayaran</a>
+        
+        {{-- Tombol sekunder untuk ganti metode pembayaran --}}
+        <form action="{{ route('frontend.payment.change', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mengganti metode pembayaran? Transaksi yang sedang berjalan akan dibatalkan.');">
+            @csrf
+            <button type="submit" class="btn btn-secondary">Ganti Metode Pembayaran</button>
+        </form>
 
-                @elseif($booking->status === 'completed')
-                    <button type="button" class="btn btn-primary btn-disabled" disabled>Telah Lunas</button>
-                    <a href="{{ route('frontend.booking.index') }}" class="btn btn-secondary">Kembali ke Daftar Booking</a>
-                @elseif($booking->status === 'confirmed')
-                    <button type="button" class="btn btn-primary btn-disabled" disabled>Telah Dikonfirmasi</button>
-                    <a href="{{ route('frontend.booking.index') }}" class="btn btn-secondary">Kembali ke Daftar Booking</a>
-                @else {{-- Status rejected, cancelled, expired, failed --}}
-                    <a href="{{ route('frontend.booking.index') }}" class="btn btn-secondary">Kembali ke Daftar Booking</a>
-                @endif
-            </div>
+        {{-- Tombol untuk membatalkan booking --}}
+        <form action="{{ route('frontend.booking.cancel', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?');">
+            @csrf
+            @method('PATCH')
+            <button type="submit" class="btn btn-danger">Batalkan Booking</button>
+        </form>
+
+    @elseif($booking->status === 'confirmed')
+        <button type="button" class="btn btn-primary btn-disabled" disabled>Telah Dikonfirmasi</button>
+    @else
+        <a href="{{ route('frontend.booking.index') }}" class="btn btn-secondary">Kembali ke Daftar Booking</a>
+    @endif
+</div>
         </div>
     </div>
 </div>
 @endsection
 
+
+{{-- di dalam booking_detail.blade.php --}}
 @push('scripts')
-{{-- Tidak ada lagi script polling di sini --}}
+@if ($booking->status === 'pending' || $booking->status === 'challenge')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const bookingId = '{{ $booking->id_booking }}';
+        const pollingUrl = '{{ route("frontend.booking.status", $booking->id_booking) }}';
+        let pollingInterval; // Variabel untuk menyimpan interval
+
+        function pollStatus() {
+            console.log('Polling for status...');
+            fetch(pollingUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Jika status BUKAN lagi 'pending' atau 'challenge'
+                    if (data.status !== 'pending' && data.status !== 'challenge') {
+                        console.log('Status changed to ' + data.status + '. Reloading page.');
+                        // Hentikan polling
+                        clearInterval(pollingInterval);
+                        // Tampilkan pesan sukses dan reload halaman
+                        const pollingDiv = document.getElementById('payment-polling-status');
+                        if (pollingDiv) {
+                            pollingDiv.classList.remove('alert-info');
+                            pollingDiv.classList.add('alert-success');
+                            pollingDiv.innerHTML = '<span>Pembayaran berhasil! Memuat ulang halaman...</span>';
+                        }
+                        // Reload halaman setelah 2 detik untuk user melihat pesan
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error during polling:', error);
+                    // Anda bisa memutuskan untuk menghentikan polling jika terjadi error
+                    // clearInterval(pollingInterval); 
+                });
+        }
+
+        // Mulai polling setiap 5 detik (5000 milidetik)
+        pollingInterval = setInterval(pollStatus, 5000);
+
+        // Jalankan polling pertama kali tanpa menunggu 5 detik
+        pollStatus();
+    });
+</script>
+@endif
 @endpush

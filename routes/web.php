@@ -66,7 +66,8 @@ Route::middleware(['auth','role:customer'])->group(function () {
     Route::post('/payment/{booking:id_booking}/process', [PaymentController::class, 'processPayment'])->name('frontend.payment.process');
     // RUTE BARU
     Route::post('/payment/{booking:id_booking}/change-method', [PaymentController::class, 'changePaymentMethod'])->name('frontend.payment.change');
-
+    // RUTE BARU UNTUK POLLING
+    Route::get('/booking/{booking:id_booking}/status', [BookingController::class, 'getBookingStatus'])->name('frontend.booking.status');
 
 });
 
