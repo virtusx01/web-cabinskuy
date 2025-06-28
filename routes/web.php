@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\App; 
 use Illuminate\Support\Facades\Session;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\SuperAdmin\SAController;
 use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegisterController;
@@ -16,6 +17,8 @@ use App\Http\Controllers\PrintReportController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentController;
+
+
 
 Route::get('/register', [RegisterController::class, 'create'])->name('backend.register');
 Route::post('/register', [RegisterController::class, 'store'])->name('backend.register.store');
@@ -92,7 +95,15 @@ Route::middleware(['auth', 'role:admin,superadmin'])->prefix('admin')->name('adm
     Route::get('/reports/booking', [PrintReportController::class, 'booking'])->name('reports.booking');
     Route::get('/reports/financial/pdf', [PrintReportController::class, 'financialPdf'])->name('reports.financial.pdf');
     Route::get('/reports/booking/pdf', [PrintReportController::class, 'bookingPdf'])->name('reports.booking.pdf');
+
+
+    Route::middleware(['role:superadmin'])->group(function () {
+        Route::resource('employees', SAController::class);
+    });
+
 });
+
+
 
 Route::get('lang/{locale}', function ($locale) {
     // Pastikan locale yang diminta didukung (misal: 'en', 'id')

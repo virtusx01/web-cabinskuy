@@ -238,7 +238,7 @@
                             </td>
                             <td>
                                 {{ $booking->cabin->name ?? 'N/A' }} <br>
-                                <small>{{ $booking->room->room_name ?? 'N/A' }}</small>
+                                <small>{{ $booking->room->typeroom ?? 'N/A' }}</small>
                             </td>
                             <td>
                                 {{ \Carbon\Carbon::parse($booking->check_in_date)->format('d M Y') }} <br>

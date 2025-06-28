@@ -53,6 +53,7 @@
                     @forelse ($detailedTransactions as $item)
                         <tr>
                             <td style="padding: 10px; border: 1px solid var(--border-color);">{{ $item['date'] }}</td>
+                            
                             <td style="padding: 10px; border: 1px solid var(--border-color);">{{ $item['description'] }}</td>
                             <td style="padding: 10px; border: 1px solid var(--border-color);">{{ $item['type'] }}</td>
                             <td style="padding: 10px; border: 1px solid var(--border-color); text-align: right;">{{ number_format($item['amount'], 0, ',', '.') }}</td>

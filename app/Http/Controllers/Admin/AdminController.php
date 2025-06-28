@@ -32,6 +32,7 @@ class AdminController extends Controller
         $totalBookings = Booking::count();
         $totalRevenue = Booking::where('status', 'confirmed')->sum('total_price'); 
         
+        $totalAdmins = User::whereIn('role', ['admin', 'superadmin'])->count();
         // --- Fetch Recent Bookings ---
         $recentBookings = Booking::with(['user', 'room.cabin'])
             ->latest()
@@ -79,6 +80,7 @@ class AdminController extends Controller
             'totalCabins' => $totalCabins,
             'totalCabinRooms' => $totalCabinRooms, 
             'totalUsers' => $totalUsers,
+            'totalAdmins' => $totalAdmins,
             'totalBookings' => $totalBookings,
             'totalRevenue' => $totalRevenue,
             'recentBookings' => $recentBookings,

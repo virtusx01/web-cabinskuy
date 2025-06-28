@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
             [
                 // Data yang akan diisi HANYA JIKA user belum ada.
                 // 'id_user' akan dibuat otomatis oleh Model User.
-                'name' => 'Super Administrator',
+                'name' => 'Aan',
                 'role' => 'superadmin',
                 'status' => true,
                 'hp' => '081234567890',
@@ -39,7 +39,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'admin@gmail.com'
             ],
             [
-                'name' => 'Administrator',
+                'name' => 'Sires',
                 'role' => 'admin',
                 'status' => true,
                 'hp' => '081234567891',

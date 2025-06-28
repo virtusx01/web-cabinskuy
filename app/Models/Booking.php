@@ -34,6 +34,7 @@ class Booking extends Model
      * Atribut yang dapat diisi secara massal.
      */
     protected $fillable = [
+        'id_booking',
         'id_user',
         'id_cabin',
         'id_room',

@@ -197,14 +197,23 @@
                 @auth
                     <a href="#" class="profile-info">
                         <div class="profile-picture" style="background-image: url('{{ Auth::user()->profile_photo_path ? asset('storage/' . Auth::user()->profile_photo_path) : asset('backend/images/default-avatar.png') }}');"></div>
-                        <span class="profile-name">{{ Auth::user()->name }}</span>
+                        <span class="profile-name">
+                            {{-- Tambahkan logika untuk menampilkan nama berdasarkan role --}}
+                            @if (Auth::user()->isSuperAdmin())
+                                Super Admin {{ Str::after(Auth::user()->name, 'Admin ') }}
+                            @elseif (Auth::user()->isAdmin())
+                                Admin {{ Str::after(Auth::user()->name, 'Admin ') }}
+                            @else
+                                {{ Auth::user()->name }}
+                            @endif
+                        </span>
                     </a>
                     <form method="POST" action="{{ route('backend.logout') }}" style="display: inline;">
                         @csrf
-                        <a href="{{ route('backend.logout') }}" 
-                           class="logout-link"
-                           onclick="event.preventDefault(); this.closest('form').submit();">
-                           <i class="fas fa-sign-out-alt"></i> Logout
+                        <a href="{{ route('backend.logout') }}"
+                        class="logout-link"
+                        onclick="event.preventDefault(); this.closest('form').submit();">
+                            <i class="fas fa-sign-out-alt"></i> Logout
                         </a>
                     </form>
                 @endauth

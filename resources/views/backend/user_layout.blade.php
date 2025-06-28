@@ -553,7 +553,6 @@
                 <nav>
                     <ul class="navbar-links">
                         <li><a href="{{ url('/') }}" class="{{ request()->is('/') ? 'active' : '' }}" data-translate="nav_home">Home</a></li>
-                        {{-- Removed About and Blog from navbar --}}
                         <li><a href="{{ url('/kabin') }}" class="{{ request()->is('kabin*') ? 'active' : '' }}" data-translate="nav_cabin">Kabin</a></li>
                         @auth
                             <li><a href="{{ route('frontend.booking.index') }}" class="{{ request()->routeIs('frontend.booking.index') ? 'active' : '' }}" data-translate="nav_my_bookings">My Bookings</a></li>
@@ -562,12 +561,23 @@
                 </nav>
                 <div class="navbar-auth">
                     @auth
-                        <a href="{{ route('profile.user.show') }}" class="profile-info {{ request()->routeIs('profile.user.*') ? 'active' : '' }}">
+                        {{-- CONDITIONAL ROUTING FOR PROFILE LINK --}}
+                        @if(Auth::user()->isCustomer())
+                            <a href="{{ route('profile.user.edit') }}" class="profile-info {{ request()->routeIs('profile.user.*') ? 'active' : '' }}">
                                 <div class="profile-picture"
                                      style="background-image: url('{{ Auth::user()->profile_photo_path ? asset('storage/' . Auth::user()->profile_photo_path) : asset('backend/images/default-avatar.png') }}');">
                                 </div>
-                            <span class="profile-name">{{ Auth::user()->name }}</span>
-                        </a>
+                                <span class="profile-name">{{ Auth::user()->name }}</span>
+                            </a>
+                        @else
+                            {{-- For admin/superadmin, keep current showProfile or redirect to admin dashboard --}}
+                            <a href="{{ route('profile.user.show') }}" class="profile-info {{ request()->routeIs('profile.user.*') ? 'active' : '' }}">
+                                <div class="profile-picture"
+                                     style="background-image: url('{{ Auth::user()->profile_photo_path ? asset('storage/' . Auth::user()->profile_photo_path) : asset('backend/images/default-avatar.png') }}');">
+                                </div>
+                                <span class="profile-name">{{ Auth::user()->name }}</span>
+                            </a>
+                        @endif
                         <form method="POST" action="{{ route('backend.logout') }}" style="display: inline;">
                             @csrf
                             <button type="submit" class="btn-logout" data-translate="logout_btn">Logout</button>
