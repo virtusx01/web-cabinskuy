@@ -101,7 +101,8 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'current_password' => 'nullable|string',
+            // current_password is only required if the user has an existing password AND they are trying to set a new one
+            'current_password' => ($user->password !== null && $request->filled('password')) ? 'required|string' : 'nullable|string',
             'password' => 'nullable|string|min:8|confirmed',
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // 2MB max, changed field name
         ]);
@@ -141,18 +142,17 @@ class UserController extends Controller
 
         // Handle password update logic
         if ($request->filled('password')) {
-            // If a new password is provided, current_password must also be provided
-            if (!$request->filled('current_password')) {
-                throw ValidationException::withMessages([
-                    'current_password' => 'Kata sandi saat ini diperlukan untuk memperbarui kata sandi.',
-                ]);
-            }
-
-            // Verify if the provided current password matches the user's actual password
-            if (!Hash::check($request->current_password, $user->password)) {
-                throw ValidationException::withMessages([
-                    'current_password' => 'Kata sandi saat ini tidak cocok.',
-                ]);
+            // Only require current_password if the user HAS a password set in the database
+            if ($user->password !== null) {
+                // Verify if the provided current password matches the user's actual password
+                if (!Hash::check($request->current_password, $user->password)) {
+                    throw ValidationException::withMessages([
+                        'current_password' => 'Kata sandi saat ini tidak cocok.',
+                    ]);
+                }
+            } else {
+                // If user->password is null (e.g., Google login), then current_password is not applicable
+                // No need to check current_password in this case, they are creating one.
             }
 
             // Hash and set the new password
@@ -170,7 +170,7 @@ class UserController extends Controller
         if ($user->wasChanged('email')) {
             $updatedItems[] = 'email';
         }
-        if ($request->filled('password')) { // Check request, as $user->wasChanged('password') might not work as expected after Hash::make
+        if ($request->filled('password')) {
             $updatedItems[] = 'kata sandi';
         }
         if ($request->hasFile('profile_photo')) {

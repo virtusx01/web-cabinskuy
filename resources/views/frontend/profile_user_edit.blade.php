@@ -58,9 +58,9 @@
                                 }
                             @endphp
                             <img src="{{ $photoUrl }}" 
-                                 alt="Current Profile Photo" 
-                                 class="photo-preview" 
-                                 id="photoPreview">
+                                alt="Current Profile Photo" 
+                                class="photo-preview" 
+                                id="photoPreview">
                         </div>
                         
                         <div class="photo-upload-controls">
@@ -118,11 +118,18 @@
                         </div>
                         <div class="notice-content">
                             <strong>Catatan Keamanan:</strong>
-                            <p>Kosongkan bagian kata sandi jika tidak ingin mengubahnya. Untuk mengubah kata sandi, masukkan kata sandi saat ini terlebih dahulu.</p>
+                            {{-- Conditional message for password --}}
+                            @if ($user->password === null)
+                                <p>Anda belum memiliki kata sandi lokal. Anda dapat membuat kata sandi baru di sini.</p>
+                            @else
+                                <p>Kosongkan bagian kata sandi jika tidak ingin mengubahnya. Untuk mengubah kata sandi, masukkan kata sandi saat ini terlebih dahulu.</p>
+                            @endif
                         </div>
                     </div>
 
                     <div class="form-grid">
+                        {{-- Show "Current Password" only if the user has a password set --}}
+                        @if ($user->password !== null)
                         <div class="form-group password-group">
                             <label for="current_password">
                                 <i class="fas fa-lock"></i>
@@ -134,13 +141,18 @@
                                     <i class="fas fa-eye" id="current_password_icon"></i>
                                 </button>
                             </div>
-                            <span class="form-helper">Required hanya jika ingin mengubah kata sandi</span>
+                            <span class="form-helper">Diperlukan hanya jika ingin mengubah kata sandi</span>
                         </div>
+                        @endif
 
                         <div class="form-group password-group">
                             <label for="password">
                                 <i class="fas fa-key"></i>
-                                Kata Sandi Baru
+                                @if ($user->password === null)
+                                    Buat Kata Sandi Baru
+                                @else
+                                    Kata Sandi Baru
+                                @endif
                             </label>
                             <div class="password-input">
                                 <input type="password" name="password" id="password">
@@ -183,7 +195,7 @@
 </div>
 
 <style>
-/* Your existing CSS styles go here */
+/* Your existing CSS styles go here (no changes needed) */
 .edit-profile-container {
     max-width: 800px;
     margin: 0 auto;
