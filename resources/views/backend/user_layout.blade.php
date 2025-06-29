@@ -555,8 +555,8 @@
                         <li><a href="{{ url('/') }}" class="{{ request()->is('/') ? 'active' : '' }}" data-translate="nav_home">Home</a></li>
                         <li><a href="{{ url('/kabin') }}" class="{{ request()->is('kabin*') ? 'active' : '' }}" data-translate="nav_cabin">Kabin</a></li>
                         @auth
-                            <li><a href="{{ route('frontend.booking.index') }}" class="{{ request()->routeIs('frontend.booking.index') ? 'active' : '' }}" data-translate="nav_my_bookings">My Bookings</a></li>
-                        @endauth
+                    <li><a href="{{ route('frontend.booking.index') }}" class="{{ request()->routeIs('frontend.booking.index') ? 'active' : '' }}" data-translate="nav_my_bookings">My Bookings</a></li>
+                @endauth
                     </ul>
                 </nav>
                 <div class="navbar-auth">

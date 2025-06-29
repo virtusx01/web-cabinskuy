@@ -343,7 +343,7 @@
                     <div class="cabin-room-details">
                         <h4>{{ $booking->cabin->name }}</h4>
                         <p>Tipe: {{ $booking->room->typeroom }}</p>
-                        <p>Lokasi: {{ $booking->cabin->location }}</p>
+                        <p>Lokasi: {{ $booking->cabin->location_address }}</p>
                         <ul>
                             <li>Kapasitas: {{ $booking->room->max_guests }} tamu</li>
                             <li>Biaya per malam: Rp {{ number_format($booking->room->price, 0, ',', '.') }}</li>
