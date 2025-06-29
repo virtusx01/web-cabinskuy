@@ -287,7 +287,7 @@
                 <div class="detail-item">
                     <strong>Invoice:</strong>
                     <span class="">
-                        {{ $booking->latestPayment }}
+                        {{ $booking->latestPayment->transaction_id ?? 'Belum Ada Invoice' }}
                     </span>
                 </div>
                 @if ($booking->status === 'pending' || $booking->status === 'challenge')

@@ -404,7 +404,7 @@ class BookingController extends Controller
         return response()->json([
             'status'       => $booking->status,
             'status_label' => $booking->status_label,
-            'status_label' => $booking->latestPayment(),
+            'payment_status_label' => $booking->latestPayment(),
         ]);
     }
 }
