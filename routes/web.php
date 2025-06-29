@@ -122,8 +122,4 @@ Route::get('lang/{locale}', function ($locale) {
 });
 
 
-Route::get('/booking/{booking}/qr-code', [BookingController::class, 'showQRCodePage'])
-    ->name('frontend.booking.qrcode');
-    
-Route::get('/booking/{booking}/qr-code/download', [BookingController::class, 'downloadQRCode'])
-    ->name('frontend.booking.qrcode.download');
+Route::get('/booking/validate-qr/{token}', [BookingController::class, 'showQRCodePage'])->name('frontend.booking.qrcode');

@@ -317,7 +317,7 @@
                         </div>
                     </div>
                     <div class="booking-card-footer">
-                        <a href="{{ route('frontend.booking.show', $booking->id_booking) }}" class="btn btn-detail">
+                        <a href="{{ route('frontend.booking.qrcode', $booking->id_booking) }}" class="btn btn-detail">
                             Lihat Detail
                         </a>
                         @if ($booking->canBeCancelled())
