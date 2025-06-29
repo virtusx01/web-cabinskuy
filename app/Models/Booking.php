@@ -183,7 +183,7 @@ class Booking extends Model
     public function successfulPayment()
     {
         return $this->hasOne(Payment::class, 'id_booking', 'id_booking')
-                    ->where('status', 'settlement'); // Assuming 'settlement' means successful payment
+                    ->where('status', 'completed'); // Assuming 'settlement' means successful payment
     }
 
     // --- SCOPES ---
