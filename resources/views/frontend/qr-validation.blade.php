@@ -409,12 +409,12 @@
 
                     <div class="detail-item">
                         <div class="detail-label">Kabin</div>
-                        <div class="detail-value">{{ $booking->cabin->cabin_name ?? 'N/A' }}</div>
+                        <div class="detail-value">{{ $booking->cabin->name ?? 'N/A' }}</div>
                     </div>
 
                     <div class="detail-item">
                         <div class="detail-label">Tipe Kamar</div>
-                        <div class="detail-value">{{ $booking->room->room_name ?? 'N/A' }}</div>
+                        <div class="detail-value">{{ $booking->room->typeroom ?? 'N/A' }}</div>
                     </div>
 
                     <div class="detail-item">
