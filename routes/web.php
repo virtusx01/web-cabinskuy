@@ -120,3 +120,15 @@ Route::get('lang/{locale}', function ($locale) {
     // Redirect kembali ke halaman sebelumnya
     return redirect()->back(); 
 });
+
+
+
+// Public QR Code Access (NON-AUTHENTICATED)
+// This route allows anyone with the correct token to view a basic booking confirmation.
+// The QR code will link to this route.
+Route::get('/qr-booking/{token}', [BookingController::class, 'showQrCodeAccessPage'])->name('frontend.qrcode.show');
+
+// Public PDF Access (can be accessed via token from QR page)
+// This route can be accessed by authenticated users (via id_booking) or non-authenticated (via qr_access_token)
+// It needs to be outside the 'auth' middleware so the QR code can use it directly.
+Route::get('/booking-pdf/{identifier}', [BookingController::class, 'generateBookingPdf'])->name('frontend.booking.pdf');

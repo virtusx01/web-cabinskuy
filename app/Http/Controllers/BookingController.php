@@ -16,6 +16,8 @@ use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 // PERBAIKI INI: Nama kelas yang benar dengan namespace lengkapnya
 use chillerlan\QRCode\Output\QRImage; 
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 
 class BookingController extends Controller
 {
@@ -286,45 +288,48 @@ class BookingController extends Controller
      * Menampilkan detail booking
      */
     public function show(Booking $booking)
-{
-    try {
-        if ($booking->id_user !== Auth::user()->id_user) {
-            abort(403, 'Anda tidak memiliki akses untuk melihat booking ini.');
-        }
+    {
+        try {
+            // Pastikan pengguna terautentikasi memiliki akses ke booking ini
+            if ($booking->id_user !== (Auth::user()->id_user ?? null)) {
+                abort(403, 'Anda tidak memiliki akses untuk melihat booking ini.');
+            }
 
-        $booking->load(['cabin', 'room', 'user', 'payments']);
+            // Eager load relasi yang diperlukan
+            $booking->load(['cabin', 'room', 'user', 'payments', 'latestSuccessfulPayment']);
 
-        $qrCode = null;
+            $qrCode = null;
 
-        // QRCode hanya dibuat jika booking sudah confirmed dan ada pembayaran berhasil
-        if ($booking->status === 'confirmed' && $booking->successfulPayment()->exists()) {
-            $options = new QROptions([
-                'outputType'    => QRCode::OUTPUT_IMAGE_PNG,
-                'eccLevel'      => QRCode::ECC_L,
-                'scale'         => 5,
-                'imageBase64'   => true,
+            // QR Code hanya dibuat jika booking sudah confirmed dan ada qr_access_token
+            // qr_access_token seharusnya hanya dihasilkan saat status 'confirmed'
+            if ($booking->status === 'confirmed' && $booking->qr_access_token) {
+                $options = new QROptions([
+                    'outputType'    => QRCode::OUTPUT_IMAGE_PNG,
+                    'eccLevel'      => QRCode::ECC_L,
+                    'scale'         => 5,
+                    'imageBase64'   => true,
+                ]);
+
+                $qr = new QRCode($options);
+
+                // URL untuk QR Code sekarang menunjuk ke rute publik baru
+                $qrContent = route('frontend.qrcode.show', ['token' => $booking->qr_access_token]);
+
+                $qrCode = $qr->render($qrContent);
+            }
+
+            return view('frontend.booking-detail', [
+                'booking' => $booking,
+                'title'   => 'Detail Booking #' . $booking->id_booking,
+                'qrCode'  => $qrCode,
             ]);
 
-            $qr = new QRCode($options);
-
-            // URL tujuan scan QR Code (halaman detail booking)
-            $qrContent = route('frontend.booking.show', ['booking' => $booking->id_booking]);
-
-            $qrCode = $qr->render($qrContent);
+        } catch (\Exception $e) {
+            Log::error('Error in show booking for authenticated user: ' . $e->getMessage(), ['exception' => $e, 'booking_id' => $booking->id_booking ?? 'N/A']);
+            return redirect()->route('frontend.beranda')
+                ->withErrors(['error' => 'Terjadi kesalahan saat memuat detail booking.']);
         }
-
-        return view('frontend.booking-detail', [
-            'booking' => $booking,
-            'title'   => 'Detail Booking #' . $booking->id_booking,
-            'qrCode'  => $qrCode,
-        ]);
-
-    } catch (\Exception $e) {
-        Log::error('Error in show booking: ' . $e->getMessage(), ['exception' => $e]);
-        return redirect()->route('frontend.beranda')
-            ->withErrors(['error' => 'Terjadi kesalahan saat memuat detail booking.']);
     }
-}
 
 
     /**
@@ -407,6 +412,82 @@ class BookingController extends Controller
         ]);
     }
     
+    public function showQrCodeAccessPage(string $token)
+    {
+        try {
+            // Cari booking berdasarkan qr_access_token
+            $booking = Booking::where('qr_access_token', $token)->first();
+
+            if (!$booking) {
+                abort(404, 'Kode QR tidak valid atau booking tidak ditemukan.');
+            }
+
+            // Pastikan booking sudah dikonfirmasi untuk ditampilkan via QR
+            if ($booking->status !== 'confirmed') {
+                abort(403, 'Booking ini belum dikonfirmasi atau status tidak valid.');
+            }
+
+            // Eager load relasi yang diperlukan untuk view (misalnya untuk menampilkan ringkasan)
+            $booking->load(['cabin', 'room']);
+
+            return view('frontend.qrcode', [ // Menggunakan view qrcode.blade.php
+                'booking' => $booking,
+                'title'   => 'Detail Booking QR Code',
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error showing QR Code access page: ' . $e->getMessage(), ['exception' => $e, 'token' => $token]);
+            abort(500, 'Terjadi kesalahan saat memuat halaman.');
+        }
+    }
+
+    public function generateBookingPdf(string $identifier)
+    {
+        try {
+            $booking = null;
+
+            // Attempt to find by qr_access_token first (for public access)
+            if (strlen($identifier) === 32 && Str::startsWith($identifier, substr(Str::random(32), 0, 1))) { // Rough check for 32-char random string
+                $booking = Booking::where('qr_access_token', $identifier)->first();
+            }
+
+            // If not found by token, or if it's likely an id_booking, try by id_booking
+            if (!$booking) {
+                // If authenticated, ensure they own the booking
+                if (Auth::check()) {
+                    $booking = Booking::where('id_booking', $identifier)
+                                      ->where('id_user', Auth::user()->id_user)
+                                      ->first();
+                }
+            }
+
+            if (!$booking) {
+                abort(404, 'Booking tidak ditemukan atau Anda tidak memiliki akses.');
+            }
+
+            // Tambahan keamanan: PDF hanya bisa diunduh untuk booking yang sudah dikonfirmasi.
+            if ($booking->status !== 'confirmed' && $booking->status !== 'completed') {
+                abort(403, 'Dokumen booking hanya tersedia untuk booking yang sudah dikonfirmasi.');
+            }
+
+            // Pastikan relasi yang dibutuhkan untuk PDF sudah dimuat
+            $booking->load(['cabin', 'room', 'user', 'latestSuccessfulPayment']);
+
+            $data = [
+                'booking' => $booking,
+                'title'   => 'Konfirmasi Booking Anda',
+            ];
+
+            $pdf = Pdf::loadView('pdf.booking_invoice', $data);
+            $pdf->setPaper('A4', 'portrait');
+
+            return $pdf->download('booking-confirmation-' . $booking->id_booking . '.pdf');
+
+        } catch (\Exception $e) {
+            Log::error('Error generating booking PDF: ' . $e->getMessage(), ['exception' => $e, 'identifier' => $identifier]);
+            abort(500, 'Terjadi kesalahan saat membuat dokumen PDF booking.');
+        }
+    }
     
 
     

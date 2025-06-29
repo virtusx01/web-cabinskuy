@@ -56,6 +56,7 @@ class Booking extends Model
         'status',
         'checkin_room',
         'snap_token',
+        'qr_access_token',
         'booking_date',
         'admin_notes',
         'confirmed_at',
@@ -353,13 +354,35 @@ class Booking extends Model
         if (!in_array($this->status, ['pending', 'challenge'])) {
             return false;
         }
-        
-        return $this->update([
-            'status'        => 'confirmed',
-            'confirmed_at'  => now(),
-            'confirmed_by'  => $adminId,
-            'admin_notes'   => $notes,
+
+        // Generate a new, unique QR access token
+        $token = Str::random(32); // Use a sufficiently long random string (e.g., 32 characters for security)
+        while (self::where('qr_access_token', $token)->exists()) {
+            $token = Str::random(32); // Regenerate if by chance it's not unique
+        }
+
+        $confirmed = $this->update([
+            'status'            => 'confirmed',
+            'confirmed_at'      => now(),
+            'confirmed_by'      => $adminId,
+            'admin_notes'       => $notes,
+            'qr_access_token'   => $token, // <<< SET TOKEN DI SINI
         ]);
+
+        // If confirmation successful, check for a suitable payment
+        if ($confirmed) {
+            $validPayment = $this->payments()
+                ->where('status', '!=', 'completed')
+                ->where('amount', '>=', $this->total_price)
+                ->latest()
+                ->first();
+
+            if ($validPayment) {
+                $validPayment->update(['status' => 'completed']);
+            }
+        }
+
+        return $confirmed;
     }
 
     /**
@@ -430,16 +453,21 @@ class Booking extends Model
     {
         // Use $this->status and $this->total_price directly as they are model attributes
         if (!in_array($this->status, ['pending', 'challenge'])) {
-            return false;
-        }
+        return false;
+    }
 
-        // Update status booking to confirmed
-        $confirmed = $this->update([
-            'status'        => 'confirmed',
-            'confirmed_at'  => now(),
-            'confirmed_by'  => $adminId,
-            'admin_notes'   => $notes,
-        ]);
+    $token = Str::random(32);
+    while (self::where('qr_access_token', $token)->exists()) {
+        $token = Str::random(32);
+    }
+
+    $confirmed = $this->update([
+        'status'        => 'confirmed',
+        'confirmed_at'  => now(),
+        'confirmed_by'  => $adminId,
+        'admin_notes'   => $notes,
+        'qr_access_token' => $token, // <<< TAMBAHKAN INI
+    ]);
 
         // If confirmation successful, check for a suitable payment
         if ($confirmed) {
