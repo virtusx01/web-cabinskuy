@@ -69,7 +69,7 @@ class QRCodeController extends Controller
 
             // Payment validation
             $latestPayment = $booking->latestPayment;
-            if (!$latestPayment || $latestPayment->status !== 'settlement') { // Assuming 'settlement' means successful payment
+            if (!$latestPayment || $latestPayment->status !== 'completed') { // Assuming 'completed' means successful payment
                 return $this->showValidationPage([
                     'status' => 'unverified',
                     'title' => 'Payment Not Cleared',
@@ -142,7 +142,7 @@ class QRCodeController extends Controller
 
             // Payment validation
             $latestPayment = $booking->latestPayment;
-            if (!$latestPayment || $latestPayment->status !== 'settlement') {
+            if (!$latestPayment || $latestPayment->status !== 'completed') {
                 return response()->json([
                     'valid' => false,
                     'status' => 'unverified',
@@ -172,7 +172,7 @@ class QRCodeController extends Controller
                 'message' => 'Booking verified.',
                 'data' => [
                     'id_booking' => $booking->id_booking,
-                    'contact_name' => $booking->contact_name,
+                    'contact_name' => $booking->name,
                     'cabin_name' => $booking->cabin->cabin_name ?? 'N/A',
                     'room_name' => $booking->room->room_name ?? 'N/A',
                     'total_guests' => $booking->total_guests,
