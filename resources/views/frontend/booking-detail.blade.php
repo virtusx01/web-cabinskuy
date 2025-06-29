@@ -288,7 +288,7 @@
                 <div class="detail-item">
                     <strong>Status:</strong>
                     <span class="{{ $booking->status }}">
-                        {{ $booking->successfulPayment }}
+                        {{ $booking->successfulPayment}}
                     </span>
                 </div>
                 @if ($booking->status === 'pending' || $booking->status === 'challenge')
