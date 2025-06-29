@@ -65,7 +65,7 @@ Route::middleware(['auth','role:customer'])->group(function () {
     Route::get('/booking/create/{room:id_room}', [BookingController::class, 'create'])->name('frontend.booking.create');
     Route::post('/booking/store', [BookingController::class, 'store'])->name('frontend.booking.store');
     Route::get('/my-bookings', [BookingController::class, 'index'])->name('frontend.booking.index');
-    Route::get('/booking/{booking:id_booking}', [BookingController::class, 'show'])->name('frontend.booking.show');
+    Route::get('/booking/{booking}', [BookingController::class, 'show'])->name('frontend.booking.show');
     Route::patch('/booking/{booking:id_booking}/cancel', [BookingController::class, 'cancel'])->name('frontend.booking.cancel');
 
     Route::get('/payment/{booking:id_booking}', [PaymentController::class, 'showPaymentForm'])->name('frontend.payment.show');

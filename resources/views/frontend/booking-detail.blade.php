@@ -222,21 +222,6 @@
         color: #333;
         font-weight: bold;
     }
-    .btn-download-pdf {
-        background-color: #007bff; /* Bootstrap primary blue, adjust if you have custom brand color */
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: bold;
-        display: inline-block;
-        margin-top: 15px;
-        transition: background-color 0.2s;
-    }
-    .btn-download-pdf:hover {
-        background-color: #0056b3;
-        color: white;
-    }
 
 
     @media (max-width: 768px) {
@@ -301,9 +286,8 @@
 
                 <div class="detail-item">
                     <strong>Invoice:</strong>
-                    {{-- Display transaction ID from the latest successful payment --}}
-                    <span class="booking-status">
-                        {{ $booking->latestSuccessfulPayment->transaction_id ?? 'Belum ada Invoice' }}
+                    <span class="booking-status status">
+                        {{ $booking->latestPayment->transaction_id ?? 'Belum ada Invoice' }}
                     </span>
                 </div>
 
@@ -333,6 +317,13 @@
                     <strong>Jumlah Tamu:</strong>
                     <span>{{ $booking->total_guests }} orang</span>
                 </div>
+                {{-- Display Transaction ID if booking is confirmed and has a successful payment --}}
+                @if ($booking->status === 'confirmed' && $booking->latestSuccessfulPayment)
+                    <div class="detail-item">
+                        <strong>ID Transaksi Pembayaran:</strong>
+                        <span>{{ $booking->latestSuccessfulPayment->transaction_id ?? 'N/A' }}</span>
+                    </div>
+                @endif
             </div>
 
             <div class="detail-section">
@@ -343,9 +334,9 @@
                     <div class="cabin-room-details">
                         <h4>{{ $booking->cabin->name }}</h4>
                         <p>Tipe: {{ $booking->room->typeroom }}</p>
-                        <p>Lokasi: {{ $booking->cabin->location_address }}</p>
+                        <p>Lokasi: {{ $booking->cabin->location }}</p>
                         <ul>
-                            <li>Kapasitas: {{ $booking->room->max_guests }} tamu</li>
+                            <li>Kapasitas: {{ $booking->room->max_guests }} tamu</li> {{-- Changed from slot_room to max_guests as per validation --}}
                             <li>Biaya per malam: Rp {{ number_format($booking->room->price, 0, ',', '.') }}</li>
                         </ul>
                     </div>
@@ -383,6 +374,7 @@
                     </div>
                     <div class="detail-item">
                         <strong>Ditolak Oleh:</strong>
+                        {{-- Assuming 'rejectedBy' is a relationship to User model --}}
                         <span>{{ $booking->rejectedBy ? $booking->rejectedBy->name : 'Sistem' }} pada {{ \Carbon\Carbon::parse($booking->rejected_at)->locale('id')->isoFormat('dddd, D MMMM YYYY, HH:mm') }} WIB</span>
                     </div>
                 @endif
@@ -410,16 +402,12 @@
                 <span>{{ $booking->formatted_total_price }}</span>
             </div>
 
-            {{-- New section for QR Code and PDF Download --}}
-            @if ($qrCode)
-                <div class="qr-code-section">
-                    <p>Tunjukkan QR Code ini saat check-in:</p>
-                    <img src="{{ $qrCode }}" alt="QR Code Booking #{{ $booking->id_booking }}">
-                    <p>Scan QR Code untuk verifikasi booking Anda.</p>
-                    <a href="{{ route('frontend.booking.pdf', ['identifier' => $booking->qr_access_token]) }}" class="btn-download-pdf" target="_blank">
-                        Unduh Konfirmasi Booking (PDF)
-                    </a>
-                </div>
+            {{-- New section for QR Code --}}
+            @if ($qrCode) {{-- This checks if the QR code data was actually generated and passed --}}
+                
+                <a href="{{ route('frontend.booking.pdf', ['identifier' => $booking->qr_access_token]) }}" class="btn-download" target="_blank">
+                    Unduh Konfirmasi Booking (PDF)
+                </a>
             @endif
 
             <div class="action-buttons">
@@ -443,6 +431,8 @@
                 @elseif($booking->status === 'confirmed')
                     {{-- For confirmed bookings, show a disabled "Confirmed" button or relevant actions --}}
                     <button type="button" class="btn btn-primary btn-disabled" disabled>Telah Dikonfirmasi</button>
+                    {{-- You might also add a button to download the PDF directly here if desired --}}
+                    {{-- <a href="{{ route('frontend.booking.pdf', $booking->id_booking) }}" class="btn btn-primary" target="_blank">Unduh Konfirmasi PDF</a> --}}
                 @else
                     <a href="{{ route('frontend.booking.index') }}" class="btn btn-secondary">Kembali ke Daftar Booking</a>
                 @endif
@@ -472,8 +462,8 @@
                 })
                 .then(data => {
                     // Check if the booking status is NOT 'pending' or 'challenge' anymore
-                    if (data.status == 'confirmed' || data.status == 'completed') { // Also check for 'completed'
-                        console.log('Status changed to ' + data.status + '. Reloading page.');
+                    if (data.booking_status == 'confirmed') {
+                        console.log('Status changed to ' + data.booking_status + '. Reloading page.');
                         // Stop polling
                         clearInterval(pollingInterval);
                         // Display success message and reload page
@@ -484,18 +474,6 @@
                             pollingDiv.innerHTML = '<span>Pembayaran berhasil! Memuat ulang halaman...</span>';
                         }
                         // Reload page after 2 seconds to let the user see the message
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
-                    } else if (data.status == 'rejected' || data.status == 'cancelled') {
-                        console.log('Status changed to ' + data.status + '. Reloading page.');
-                        clearInterval(pollingInterval);
-                        const pollingDiv = document.getElementById('payment-polling-status');
-                        if (pollingDiv) {
-                            pollingDiv.classList.remove('alert-info');
-                            pollingDiv.classList.add('alert-danger');
-                            pollingDiv.innerHTML = '<span>Booking telah ' + data.status_label + '. Memuat ulang halaman...</span>';
-                        }
                         setTimeout(() => {
                             window.location.reload();
                         }, 2000);
