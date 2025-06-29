@@ -346,6 +346,99 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
+        {{-- Letakkan ini di bagian paling bawah di dalam tag <style> --}}
+@media print {
+    /* Sembunyikan semua yang tidak perlu dicetak */
+    body > *:not(#printable-area) {
+        display: none;
+    }
+    .action-buttons, .refresh-btn, .loading, .timestamp, .security-note, .status-icon, .validation-message, .validation-title, .verification-badge {
+        display: none;
+    }
+
+    /* Atur ulang body untuk cetak */
+    body {
+        background: #fff !important; /* Hapus gradien */
+        padding: 0;
+        margin: 0;
+        font-size: 11pt;
+        color: #000;
+    }
+
+    /* Tampilkan hanya area cetak dan atur posisinya */
+    #printable-area {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        padding: 20px; /* Beri sedikit margin pada kertas */
+    }
+
+    /* Hapus style yang tidak perlu dari container utama */
+    .validation-container {
+        padding: 0;
+        box-shadow: none;
+        border-radius: 0;
+        max-width: none;
+    }
+
+    /* Rapikan tampilan detail booking */
+    .booking-details {
+        box-shadow: none;
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin: 0;
+    }
+
+    .booking-details h3 {
+        text-align: center;
+        font-size: 18pt;
+        border-bottom: 2px solid #000;
+    }
+
+    .booking-details h3::after {
+        display: none; /* Hapus garis kecil di bawah judul */
+    }
+
+    /* Hapus style yang boros tinta/ruang */
+    .detail-item, .price-highlight {
+        box-shadow: none;
+        background: #fff !important;
+        color: #000 !important;
+        border-radius: 0;
+        border-left: none;
+        border-bottom: 1px dashed #ccc;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr; /* Buat menjadi satu kolom agar lebih rapi di kertas */
+    }
+
+    .price-highlight {
+        text-align: right;
+        font-size: 14pt;
+        border-top: 2px solid #000;
+        border-bottom: none;
+        margin-top: 15px;
+        padding-top: 15px;
+    }
+
+    .booking-status {
+        background-color: transparent !important;
+        border: 1px solid #000 !important;
+        color: #000 !important;
+        padding: 4px 8px;
+    }
+
+    /* Pastikan gambar QR tidak terlalu besar */
+    #printable-area img {
+        max-width: 150px !important;
+        page-break-inside: avoid; /* Mencegah gambar terpotong antar halaman */
+    }
+}
     </style>
 </head>
 <body>
@@ -487,9 +580,7 @@
             <a href="{{ route('frontend.beranda') }}" class="btn btn-primary">🏠 Kembali ke Beranda</a>
             
             @if($booking && $status === 'verified')
-                <a href="{{ route('qr.pdf', ['token' => $booking->qr_validation_token]) }}" target="_blank" class="btn btn-primary">
-                    Cetak Validasi (PDF)
-                </a>
+                <button onclick="window.print()" class="btn btn-secondary">🖨️ Cetak Validasi</button>
             @endif
         </div>
 

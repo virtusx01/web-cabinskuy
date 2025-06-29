@@ -125,3 +125,6 @@ Route::get('lang/{locale}', function ($locale) {
 // QR Code Validation Routes (Public - No Authentication Required)
 Route::get('/qr/validate/{token}', [QRCodeController::class, 'validateQRCode'])->name('qr.validate');
 Route::get('/api/qr/validate/{token}', [QRCodeController::class, 'validateQRCodeAPI'])->name('api.qr.validate');
+
+// ROUTE BARU UNTUK DOWNLOAD PDF VALIDASI
+Route::get('/qr/validate/{token}/pdf', [QRCodeController::class, 'downloadValidationPDF'])->name('qr.validation.pdf');
