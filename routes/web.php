@@ -17,7 +17,7 @@ use App\Http\Controllers\PrintReportController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\QRCodeController; // Import QRCodeController
+use App\Http\Controllers\QRCodeController; // Make sure this is imported
 
 /*
 |--------------------------------------------------------------------------
@@ -59,12 +59,9 @@ Route::post('/booking/start', [BookingController::class, 'startBooking'])->name(
 Route::post('/api/booking/check-availability', [BookingController::class, 'checkAvailability'])->name('api.booking.check-availability');
 Route::get('/api/rooms-by-cabin', [BookingController::class, 'getRoomsByCabin'])->name('api.rooms-by-cabin');
 
-// QR Code Validation Routes (Public - No Authentication Required)
-Route::get('/qr/validate/{token}', [QRCodeController::class, 'validateQRCode'])->name('qr.validate');
-Route::get('/api/qr/validate/{token}', [QRCodeController::class, 'validateQRCodeAPI'])->name('api.qr.validate');
-
 // Midtrans Webhook (MUST be outside 'auth' middleware)
 Route::post('/api/midtrans-notification', [PaymentController::class, 'handleNotification'])->name('midtrans.notification');
+
 
 // Authenticated User Routes (Customer Role)
 Route::middleware(['auth','role:customer'])->group(function () {
@@ -85,9 +82,6 @@ Route::middleware(['auth','role:customer'])->group(function () {
     Route::post('/payment/{booking:id_booking}/process', [PaymentController::class, 'processPayment'])->name('frontend.payment.process');
     Route::post('/payment/{booking:id_booking}/change-method', [PaymentController::class, 'changePaymentMethod'])->name('frontend.payment.change');
 
-    // QR Code Management for Users
-    Route::post('/booking/{booking:id_booking}/generate-qr', [QRCodeController::class, 'generateQRToken'])->name('frontend.booking.generate-qr');
-
     // Polling route for booking status (from frontend)
     Route::get('/booking/{booking:id_booking}/status', [BookingController::class, 'getBookingStatus'])->name('frontend.booking.status');
 });
@@ -105,10 +99,6 @@ Route::middleware(['auth', 'role:admin,superadmin'])->prefix('admin')->name('adm
     Route::post('/bookings/{booking}/confirm', [\App\Http\Controllers\Admin\AdminBookingController::class, 'confirm'])->name('bookings.confirm');
     Route::post('/bookings/{booking}/reject', [\App\Http\Controllers\Admin\AdminBookingController::class, 'reject'])->name('bookings.reject');
     Route::post('/bookings/{booking}/cancel', [\App\Http\Controllers\Admin\AdminBookingController::class, 'cancel'])->name('bookings.cancel');
-
-    // QR Code Management for Admin
-    Route::post('/bookings/{booking}/invalidate-qr', [QRCodeController::class, 'invalidateQRToken'])->name('bookings.invalidate-qr');
-    Route::get('/qr/cleanup', [QRCodeController::class, 'cleanupExpiredTokens'])->name('qr.cleanup');
 
     // Reports
     Route::get('/reports/financial', [PrintReportController::class, 'financial'])->name('reports.financial');
@@ -132,13 +122,6 @@ Route::get('lang/{locale}', function ($locale) {
     return redirect()->back();
 });
 
-// Maintenance Routes (for cron jobs or system tasks)
-Route::middleware(['auth', 'role:admin,superadmin'])->prefix('system')->name('system.')->group(function () {
-    // QR Token cleanup for system maintenance
-    Route::get('/qr-cleanup', [QRCodeController::class, 'cleanupExpiredTokens'])->name('qr.cleanup.manual');
-});
-
-// Legacy route support (if needed for backward compatibility)
-Route::get('/booking/validate-qr/{token}', function($token) {
-    return redirect()->route('qr.validate', ['token' => $token]);
-})->name('frontend.booking.qrcode');
+// QR Code Validation Routes (Public - No Authentication Required)
+Route::get('/qr/validate/{token}', [QRCodeController::class, 'validateQRCode'])->name('qr.validate');
+Route::get('/api/qr/validate/{token}', [QRCodeController::class, 'validateQRCodeAPI'])->name('api.qr.validate');

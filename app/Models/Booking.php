@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth; // Tambahkan ini jika Anda ingin mendapatkan inisial dari Auth::user()
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str; // Tambahkan ini untuk helper string
 
 class Booking extends Model
@@ -119,7 +119,6 @@ class Booking extends Model
     }
 
     // --- RELATIONSHIPS ---
-    // ... (relasi Anda yang sudah ada tetap sama)
 
     /**
      * Relasi ke model User (pemesan).
@@ -184,11 +183,10 @@ class Booking extends Model
     public function successfulPayment()
     {
         return $this->hasOne(Payment::class, 'id_booking', 'id_booking')
-                    ->where('status', 'completed');
+                    ->where('status', 'settlement'); // Assuming 'settlement' means successful payment
     }
 
     // --- SCOPES ---
-    // ... (scopes Anda yang sudah ada tetap sama)
 
     /**
      * Scope untuk booking yang pending.
@@ -236,7 +234,6 @@ class Booking extends Model
     }
 
     // --- ACCESSORS ---
-    // ... (accessors Anda yang sudah ada tetap sama)
 
     /**
      * Accessor untuk label status yang user-friendly.
@@ -248,7 +245,7 @@ class Booking extends Model
             'confirmed' => 'Dikonfirmasi',
             'rejected'  => 'Ditolak',
             'cancelled' => 'Dibatalkan',
-            'completed' => 'Pembayaran Berhasil',
+            'completed' => 'Pembayaran Berhasil', // This should be 'settlement' from Midtrans callback
             'challenge' => 'Verifikasi Fraud',
             'expired'   => 'Pembayaran Kadaluarsa',
             'failed'    => 'Pembayaran Gagal',
@@ -283,7 +280,6 @@ class Booking extends Model
     }
 
     // --- BUSINESS LOGIC METHODS ---
-    // ... (metode bisnis Anda yang sudah ada tetap sama)
 
     /**
      * Cek apakah booking sudah lunas.
@@ -299,7 +295,7 @@ class Booking extends Model
     public function getPaidAmount(): float
     {
         return (float) $this->payments()
-                             ->where('status', 'completed')
+                             ->where('status', 'settlement') // Check for settlement status
                              ->sum('amount');
     }
 
@@ -326,7 +322,9 @@ class Booking extends Model
      */
     public function isSuccessful(): bool
     {
-        return $this->status === 'completed';
+        // A booking is successful if its status is 'confirmed' AND it has a successful payment.
+        // Or if the payment status directly transitions to 'completed' (e.g., from Midtrans).
+        return $this->status === 'confirmed' && $this->isPaid();
     }
 
     /**
@@ -418,11 +416,58 @@ class Booking extends Model
 
     /**
      * Method untuk menandai booking sebagai completed.
+     * Note: In a real system, 'completed' might be set by the admin after check-out,
+     * or it might refer to payment settlement. If it's payment settlement, then `status`
+     * should become 'confirmed' and the payment record becomes 'settlement'.
+     * For now, I'll assume 'completed' is a final state after successful payment and possibly check-out.
+     * Based on your `getBookingStatus`, 'confirmed' seems to be the state after successful payment.
+     * Let's clarify: if 'completed' means payment successful, then `isSuccessful()` should rely on `isPaid()`
+     * and the booking status becoming 'confirmed'.
      */
     public function markAsCompleted(): bool
     {
+        // This method might be better named `markPaymentAsSettled` or `markAsCheckedIn`
+        // depending on your workflow. For consistency with previous definitions,
+        // if 'completed' is a final status for the booking itself, use it.
         return $this->update([
             'status' => 'completed'
         ]);
+    }
+
+    /**
+     * Generate a unique QR validation token for the booking and return its validation URL.
+     * If a token already exists, it returns the URL for the existing token.
+     * This method belongs here because it's directly about the Booking model's token.
+     */
+    public function generateAndGetQrTokenUrl(): ?string
+    {
+        // Only generate if the booking is confirmed and paid
+        if ($this->status !== 'confirmed' || !$this->successfulPayment()->exists()) {
+            return null;
+        }
+
+        // Generate token if it doesn't exist
+        if (empty($this->qr_validation_token)) {
+            do {
+                $token = 'QR' . time() . Str::random(16);
+            } while (Booking::where('qr_validation_token', $token)->exists());
+
+            $this->update(['qr_validation_token' => $token]);
+        }
+
+        // Return the route to the public QR validation page with the token
+        return route('qr.validate', ['token' => $this->qr_validation_token]);
+    }
+
+    /**
+     * Invalidate QR token (e.g., when a booking is cancelled or checked out).
+     * This method also belongs here as it directly manipulates the booking's token.
+     */
+    public function invalidateQrToken(): bool
+    {
+        if (!empty($this->qr_validation_token)) {
+            return $this->update(['qr_validation_token' => null]);
+        }
+        return true; // Already null or no token to invalidate
     }
 }

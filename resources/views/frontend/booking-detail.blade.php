@@ -394,13 +394,17 @@
             </div>
 
             {{-- New section for QR Code --}}
-            @if ($qrCode)
-                <div class="qr-code-section">
-                    <h3>QR Code Booking</h3>
-                    <img src="{{ $qrCode }}" alt="QR Code for Booking #{{ $booking->id_booking }}">
-                    <p>Tunjukkan QR Code Booking ini ke petugas.</p>
-                </div>
-            @endif
+        @if ($qrCodeImage)
+            <div class="qr-code-section">
+                <h3>QR Code Booking</h3>
+                {{-- The src attribute directly uses the base64 string --}}
+                <img src="{{ $qrCodeImage }}" alt="QR Code for Booking #{{ $booking->id_booking }}">
+                <p>Tunjukkan QR Code Booking ini ke petugas.</p>
+            </div>
+        @else
+            {{-- Optional: Display a message if no QR code is available --}}
+            <p>QR Code akan tersedia setelah booking dikonfirmasi dan pembayaran selesai.</p>
+        @endif
 
             <div class="action-buttons">
                 @if(in_array($booking->status, ['pending', 'challenge']))

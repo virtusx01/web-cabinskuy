@@ -14,8 +14,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
-// PERBAIKI INI: Nama kelas yang benar dengan namespace lengkapnya
-use chillerlan\QRCode\Output\QRImage; 
+use chillerlan\QRCode\Output\QRImage; // Make sure this is imported
+
+// No need to import QRCodeController here for its internal token generation anymore.
+// We only import it if we directly call its validation methods, which we don't in `BookingController::show`.
 
 class BookingController extends Controller
 {
@@ -202,8 +204,8 @@ class BookingController extends Controller
             // Jika jumlah unit yang sudah dibooking sudah memenuhi kuota slot_room, tolak booking.
             if ($bookedUnitsCount >= $room->slot_room) {
                      return redirect()->back()
-                        ->withErrors(['error' => 'Maaf, kamar ini sudah tidak tersedia pada tanggal yang dipilih. Silakan pilih tanggal atau kamar lain.'])
-                        ->withInput();
+                         ->withErrors(['error' => 'Maaf, kamar ini sudah tidak tersedia pada tanggal yang dipilih. Silakan pilih tanggal atau kamar lain.'])
+                         ->withInput();
             }
 
             $expectedTotalprice = $room->price * $totalNights;
@@ -222,9 +224,9 @@ class BookingController extends Controller
                 'check_in_date'  => $validated['checkin_date'],
                 'check_out_date' => $validated['checkout_date'],
                 'checkin_room'   => 1, // Asumsi 1 unit kamar per booking, jika tidak, sesuaikan.
-                                        // Jika `checkin_room` mengacu pada jumlah "slot" atau "kapasitas" yang diambil,
-                                        // maka harusnya `total_guests`. Ini perlu klarifikasi.
-                                        // Untuk sementara, saya biarkan 1 unit per booking jika slot_room adalah jumlah unit fisik.
+                                             // Jika `checkin_room` mengacu pada jumlah "slot" atau "kapasitas" yang diambil,
+                                             // maka harusnya `total_guests`. Ini perlu klarifikasi.
+                                             // Untuk sementara, saya biarkan 1 unit per booking jika slot_room adalah jumlah unit fisik.
                 'total_guests'   => $validated['total_guests'],
                 'total_nights'   => $totalNights,
                 'total_price'    => $expectedTotalprice, // Gunakan harga dari server untuk konsistensi
@@ -286,47 +288,43 @@ class BookingController extends Controller
      * Menampilkan detail booking
      */
     public function show(Booking $booking)
-{
-    try {
-        if ($booking->id_user !== Auth::user()->id_user) {
-            abort(403, 'Anda tidak memiliki akses untuk melihat booking ini.');
-        }
+    {
+        try {
+            if ($booking->id_user !== Auth::user()->id_user) {
+                abort(403, 'Anda tidak memiliki akses untuk melihat booking ini.');
+            }
 
-        $booking->load(['cabin', 'room', 'user', 'payments']);
+            $booking->load(['cabin', 'room', 'user', 'payments']);
 
-        $qrCode = null;
+            $qrCodeImage = null;
 
-        // QRCode hanya dibuat jika booking sudah confirmed dan ada pembayaran berhasil
-        if ($booking->status === 'confirmed' && $booking->successfulPayment()->exists()) {
-            $options = new QROptions([
-                'outputType'    => QRCode::OUTPUT_IMAGE_PNG,
-                'eccLevel'      => QRCode::ECC_L,
-                'scale'         => 5,
-                'imageBase64'   => true,
+            // Use the new method on the Booking model to get the QR URL
+            $qrValidationUrl = $booking->generateAndGetQrTokenUrl();
+
+            if ($qrValidationUrl) {
+                $options = new QROptions([
+                    'outputType'    => QRCode::OUTPUT_IMAGE_PNG,
+                    'eccLevel'      => QRCode::ECC_L,
+                    'scale'         => 5,
+                    'imageBase64'   => true,
+                ]);
+
+                $qr = new QRCode($options);
+                $qrCodeImage = $qr->render($qrValidationUrl);
+            }
+
+            return view('frontend.booking-detail', [
+                'booking'     => $booking,
+                'title'       => 'Detail Booking #' . $booking->id_booking,
+                'qrCodeImage' => $qrCodeImage, // Pass the base64 QR code image to the view
             ]);
 
-            $qr = new QRCode($options);
-
-            // URL tujuan scan QR Code (halaman detail booking)
-            $qrContent = route('frontend.booking.show', ['booking' => $booking->id_booking]);
-
-            $qrCode = $qr->render($qrContent);
+        } catch (\Exception $e) {
+            Log::error('Error in show booking: ' . $e->getMessage(), ['exception' => $e]);
+            return redirect()->route('frontend.beranda')
+                ->withErrors(['error' => 'Terjadi kesalahan saat memuat detail booking.']);
         }
-
-        return view('frontend.booking-detail', [
-            'booking' => $booking,
-            'title'   => 'Detail Booking #' . $booking->id_booking,
-            'qrCode'  => $qrCode,
-        ]);
-
-    } catch (\Exception $e) {
-        Log::error('Error in show booking: ' . $e->getMessage(), ['exception' => $e]);
-        return redirect()->route('frontend.beranda')
-            ->withErrors(['error' => 'Terjadi kesalahan saat memuat detail booking.']);
     }
-}
-
-
 
 
     /**
@@ -349,6 +347,8 @@ class BookingController extends Controller
             }
 
             $booking->cancel($validated['cancellation_reason'] ?? 'Dibatalkan oleh user');
+            // Invalidate QR token if booking is cancelled
+            $booking->invalidateQrToken();
 
             return redirect()->back()
                 ->with('success', 'Booking berhasil dibatalkan.');
@@ -409,5 +409,5 @@ class BookingController extends Controller
             'payment_status_label' => $booking->latestPayment(),
         ]);
     }
-    
+
 }

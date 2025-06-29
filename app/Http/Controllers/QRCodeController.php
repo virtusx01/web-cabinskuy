@@ -5,61 +5,40 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
+use Illuminate\Support\Str; // Still needed for `generateUniqueToken` if you keep it.
 use Illuminate\Support\Facades\DB;
-use chillerlan\QRCode\QRCode; // Needed if you generate QR images here
-use chillerlan\QRCode\QROptions; // Needed if you generate QR images here
+use chillerlan\QRCode\QRCode; // Not strictly needed if this controller doesn't render QR images
+use chillerlan\QRCode\QROptions; // Not strictly needed if this controller doesn't render QR images
 
 class QRCodeController extends Controller
 {
     /**
-     * Generate QR validation token for confirmed bookings
+     * The `generateQRToken` method's logic (generating and assigning token to booking)
+     * has been moved to the Booking model's `generateAndGetQrTokenUrl()` method.
+     * This method could still be used as an API endpoint if you want to explicitly
+     * trigger token generation for a booking, but it would call the Booking model's method.
+     * I'm keeping a simplified version for demonstration, but you might remove it
+     * if its only consumer was `BookingController::show`.
      */
     public function generateQRToken(Booking $booking)
     {
-        try {
-            // Ensure booking is confirmed and has a successful payment
-            if ($booking->status !== 'confirmed' || !$booking->successfulPayment()->exists()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'QR Code can only be generated for confirmed and paid bookings.'
-                ], 400);
-            }
-
-            // Check if a valid token already exists
-            if (!empty($booking->qr_validation_token)) {
-                return response()->json([
-                    'success' => true,
-                    'token' => $booking->qr_validation_token,
-                    'qr_url' => route('qr.validate', ['token' => $booking->qr_validation_token])
-                ]);
-            }
-
-            // Generate a unique token
-            $token = $this->generateUniqueToken();
-
-            // Update booking with the new token
-            $booking->update([
-                'qr_validation_token' => $token
-            ]);
-
+        $qrUrl = $booking->generateAndGetQrTokenUrl();
+        if ($qrUrl) {
             return response()->json([
                 'success' => true,
-                'token' => $token,
-                'qr_url' => route('qr.validate', ['token' => $token])
+                'token' => $booking->qr_validation_token,
+                'qr_url' => $qrUrl
             ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error generating QR token: ' . $e->getMessage(), ['booking_id' => $booking->id_booking]);
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while generating the QR token.'
-            ], 500);
         }
+        return response()->json([
+            'success' => false,
+            'message' => 'QR Code can only be generated for confirmed and paid bookings.'
+        ], 400);
     }
 
+
     /**
-     * Validate QR Code and display the detail page
+     * Validate QR Code and display the detail page (frontend view)
      */
     public function validateQRCode($token)
     {
@@ -99,12 +78,12 @@ class QRCodeController extends Controller
                 ]);
             }
 
-            // Check-in date validation (optional - can be adjusted)
+            // Check-in date validation
             $checkInDate = \Carbon\Carbon::parse($booking->check_in_date);
             $today = \Carbon\Carbon::today();
 
             // For example, QR Code is valid from 1 day before check-in until check-out
-            if ($today->lt($checkInDate->subDay()) || $today->gt(\Carbon\Carbon::parse($booking->check_out_date))) {
+            if ($today->lt($checkInDate->copy()->subDay()->startOfDay()) || $today->gt(\Carbon\Carbon::parse($booking->check_out_date)->endOfDay())) {
                 return $this->showValidationPage([
                     'status' => 'unverified',
                     'title' => 'QR Code Not Yet / No Longer Valid',
@@ -176,7 +155,7 @@ class QRCodeController extends Controller
             $checkInDate = \Carbon\Carbon::parse($booking->check_in_date);
             $today = \Carbon\Carbon::today();
 
-            if ($today->lt($checkInDate->subDay()) || $today->gt(\Carbon\Carbon::parse($booking->check_out_date))) {
+            if ($today->lt($checkInDate->copy()->subDay()->startOfDay()) || $today->gt(\Carbon\Carbon::parse($booking->check_out_date)->endOfDay())) {
                 return response()->json([
                     'valid' => false,
                     'status' => 'expired',
@@ -219,19 +198,17 @@ class QRCodeController extends Controller
 
     /**
      * Invalidate QR token (e.g., when a booking is cancelled)
+     * This method is still useful as an external trigger if needed,
+     * but the primary method for this should be on the Booking model now.
      */
     public function invalidateQRToken(Booking $booking)
     {
         try {
-            $booking->update([
-                'qr_validation_token' => null
-            ]);
-
+            $booking->invalidateQrToken(); // Call the model method
             return response()->json([
                 'success' => true,
                 'message' => 'QR Token invalidated successfully.'
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error invalidating QR token: ' . $e->getMessage(), ['booking_id' => $booking->id_booking]);
             return response()->json([
@@ -244,15 +221,18 @@ class QRCodeController extends Controller
     /**
      * Display the QR Code validation page
      */
-    private function showValidationPage($data)
+    public function showValidationPage($data)
     {
         return view('frontend.qr-validation', $data);
     }
 
     /**
-     * Generate a unique token for the QR Code
+     * Generate a unique token string. This could be public or protected.
+     * Its primary consumer is now the Booking model.
+     * If you only need it for the Booking model, consider making it private or
+     * moving it into a helper or trait. For now, keep it here.
      */
-    private function generateUniqueToken()
+    public function generateUniqueToken()
     {
         do {
             // Generate token with format: QR + timestamp + random string
@@ -263,24 +243,9 @@ class QRCodeController extends Controller
     }
 
     /**
-     * Get QR Code URL for booking (used in BookingController)
-     * This method is now responsible for generating the token if it doesn't exist
-     * and returning the URL for that token.
+     * The `getQRCodeUrl` method has been removed from here
+     * and its core logic moved to the Booking model.
      */
-    public static function getQRCodeUrl(Booking $booking)
-    {
-        if ($booking->status !== 'confirmed' || !$booking->successfulPayment()->exists()) {
-            return null;
-        }
-
-        // Generate token if it doesn't exist
-        if (empty($booking->qr_validation_token)) {
-            $token = (new self())->generateUniqueToken(); // Instantiate to call non-static method
-            $booking->update(['qr_validation_token' => $token]);
-        }
-
-        return route('qr.validate', ['token' => $booking->qr_validation_token]);
-    }
 
     /**
      * Bulk invalidate expired QR tokens (for cron job)
