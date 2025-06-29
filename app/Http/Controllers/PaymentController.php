@@ -105,7 +105,7 @@ class PaymentController extends Controller
 
             // Jika tidak ada payment pending, atau dipaksa buat baru, maka buat transaksi baru
             if (!$payment) {
-                $midtransOrderId = $booking->id_booking . '-' . Str::random(5) . '-' . time(); // Gunakan Str::random untuk keunikan
+                $midtransOrderId = Str::random(5) . time(); // Gunakan Str::random untuk keunikan
 
                 $payment = Payment::create([
                     'id_booking'     => $booking->id_booking,
