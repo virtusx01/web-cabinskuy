@@ -67,7 +67,7 @@ class PaymentController extends Controller
         if ($booking->id_user !== (Auth::user()->id_user ?? null)) {
             return response()->json(['error' => 'Akses tidak diizinkan.'], 403);
         }
-        if ($booking->iscompleted()) {
+        if ($booking->isPaid()) {
             return response()->json(['error' => 'Booking ini sudah lunas.'], 400);
         }
 
@@ -303,7 +303,7 @@ class PaymentController extends Controller
         if ($booking->id_user !== (Auth::user()->id_user ?? null)) {
             abort(403, 'Akses tidak diizinkan.');
         }
-        if ($booking->iscompleted()) {
+        if ($booking->isPaid()) {
             return redirect()->back()->withErrors(['error' => 'Booking ini sudah lunas, metode pembayaran tidak dapat diganti.']);
         }
 
@@ -346,6 +346,4 @@ class PaymentController extends Controller
             return redirect()->back()->withErrors(['error' => 'Gagal mengganti metode pembayaran. Silakan coba lagi.']);
         }
     }
-
-    
 }
