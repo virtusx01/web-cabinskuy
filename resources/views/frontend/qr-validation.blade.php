@@ -290,6 +290,11 @@
             color: #666;
             font-style: italic;
         }
+        
+        /* Elemen ini hanya akan terlihat saat mencetak */
+        .printable-only {
+            display: none;
+        }
 
         @media (max-width: 768px) {
             .validation-container {
@@ -347,102 +352,150 @@
             border: 1px solid #f5c6cb;
         }
 
-        {{-- Letakkan ini di bagian paling bawah di dalam tag <style> --}}
-@media print {
-    /* Sembunyikan semua yang tidak perlu dicetak */
-    body > *:not(#printable-area) {
-        display: none;
-    }
-    .action-buttons, .refresh-btn, .loading, .timestamp, .security-note, .status-icon, .validation-message, .validation-title, .verification-badge {
-        display: none;
-    }
+        {{-- ========================================================= --}}
+        {{-- ============ KODE MEDIA PRINT YANG DIPERBAIKI ============ --}}
+        {{-- ========================================================= --}}
+        @media print {
+            /* 1. Sembunyikan semua elemen yang tidak perlu */
+            .action-buttons, .refresh-btn, .loading, .timestamp, .security-note, 
+            .status-icon, .validation-message, .validation-title, .verification-badge {
+                display: none !important;
+            }
 
-    /* Atur ulang body untuk cetak */
-    body {
-        background: #fff !important; /* Hapus gradien */
-        padding: 0;
-        margin: 0;
-        font-size: 11pt;
-        color: #000;
-    }
+            /* Sembunyikan semua di luar area cetak */
+            body > *:not(#printable-area) {
+                display: none !important;
+            }
 
-    /* Tampilkan hanya area cetak dan atur posisinya */
-    #printable-area {
-        display: block;
-        width: 100%;
-        max-width: 100%;
-        position: absolute;
-        top: 0;
-        left: 0;
-        padding: 20px; /* Beri sedikit margin pada kertas */
-    }
+            /* 2. Atur ulang body dan container utama untuk cetak */
+            body {
+                background: #fff !important;
+                padding: 0;
+                margin: 0;
+                font-family: 'Helvetica', 'Arial', sans-serif; /* Gunakan font yang hemat ruang */
+                font-size: 9.5pt; /* Kecilkan ukuran font dasar */
+                color: #000;
+                line-height: 1.3;
+            }
 
-    /* Hapus style yang tidak perlu dari container utama */
-    .validation-container {
-        padding: 0;
-        box-shadow: none;
-        border-radius: 0;
-        max-width: none;
-    }
+            #printable-area, .validation-container {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                position: static !important;
+            }
 
-    /* Rapikan tampilan detail booking */
-    .booking-details {
-        box-shadow: none;
-        border: 1px solid #ccc;
-        padding: 20px;
-        margin: 0;
-    }
+            /* 3. Atur ulang detail booking agar lebih rapat */
+            .booking-details {
+                box-shadow: none !important;
+                border: 1px solid #000 !important;
+                padding: 15px !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+            }
 
-    .booking-details h3 {
-        text-align: center;
-        font-size: 18pt;
-        border-bottom: 2px solid #000;
-    }
+            .booking-details h3 {
+                text-align: center;
+                font-size: 14pt; /* Kecilkan judul */
+                border-bottom: 2px solid #000;
+                padding-bottom: 8px; /* Kurangi padding bawah */
+                margin-bottom: 15px; /* Kurangi margin bawah */
+            }
 
-    .booking-details h3::after {
-        display: none; /* Hapus garis kecil di bawah judul */
-    }
+            .booking-details h3::after {
+                display: none !important;
+            }
+            
+            /* 4. Buat grid lebih efisien */
+            .detail-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr; /* Tetap 2 kolom agar tidak terlalu tinggi */
+                gap: 0 15px; /* Hapus gap vertikal, beri gap horizontal */
+            }
 
-    /* Hapus style yang boros tinta/ruang */
-    .detail-item, .price-highlight {
-        box-shadow: none;
-        background: #fff !important;
-        color: #000 !important;
-        border-radius: 0;
-        border-left: none;
-        border-bottom: 1px dashed #ccc;
-    }
+            .detail-item {
+                background: #fff !important;
+                color: #000 !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                border-left: none !important;
+                border-bottom: 1px dotted #888; /* Ganti border agar lebih hemat tinta */
+                padding: 6px 0; /* Kurangi padding secara drastis */
+                margin: 0;
+            }
+            
+            /* Atur detail item terakhir agar tidak ada border */
+            .detail-item:last-child {
+              border-bottom: none;
+            }
+            
+            /* Atur item permintaan khusus jika ada */
+            .detail-item[style*="grid-column"] {
+                grid-column: 1 / -1;
+            }
 
-    .detail-grid {
-        grid-template-columns: 1fr; /* Buat menjadi satu kolom agar lebih rapi di kertas */
-    }
+            .detail-label {
+                font-size: 8.5pt;
+                font-weight: normal;
+                color: #333;
+                margin-bottom: 2px;
+            }
 
-    .price-highlight {
-        text-align: right;
-        font-size: 14pt;
-        border-top: 2px solid #000;
-        border-bottom: none;
-        margin-top: 15px;
-        padding-top: 15px;
-    }
+            .detail-value {
+                font-size: 10pt;
+                font-weight: bold;
+            }
 
-    .booking-status {
-        background-color: transparent !important;
-        border: 1px solid #000 !important;
-        color: #000 !important;
-        padding: 4px 8px;
-    }
+            /* 5. Atur ulang status dan highlight harga */
+            .booking-status {
+                background-color: transparent !important;
+                border: 1px solid #000 !important;
+                color: #000 !important;
+                padding: 3px 8px;
+                font-size: 8.5pt;
+                border-radius: 5px;
+                font-weight: bold;
+            }
 
-    /* Pastikan gambar QR tidak terlalu besar */
-    #printable-area img {
-        max-width: 150px !important;
-        page-break-inside: avoid; /* Mencegah gambar terpotong antar halaman */
-    }
-}
+            .price-highlight {
+                background: #fff !important;
+                color: #000 !important;
+                text-align: right;
+                font-size: 12pt; /* Kecilkan font total */
+                font-weight: bold;
+                border-top: 2px solid #000;
+                padding: 10px 0 0 0; /* Kurangi padding */
+                margin: 15px 0 0 0; /* Kurangi margin */
+            }
+
+            /* 6. Atur QR Code dan elemen khusus cetak lainnya */
+            .printable-only {
+                display: block !important; /* Tampilkan elemen yang hanya untuk cetak */
+                page-break-before: auto;
+                page-break-inside: avoid; /* Hindari QR code terpotong */
+            }
+            
+            #booking-qr-code {
+                display: block;
+                max-width: 120px !important; /* Kecilkan QR Code agar hemat ruang */
+                height: auto;
+                margin: 5px auto 0;
+            }
+
+            /* Hindari halaman terpotong di tengah elemen penting */
+            h3, .detail-grid, .price-highlight {
+                page-break-inside: avoid;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="validation-container">
+    {{-- PERUBAHAN: Tambahkan id="printable-area" di sini --}}
+    <div class="validation-container" id="printable-area">
         <div class="status-icon status-{{ $status }}">
             @if($status === 'verified')
                 ✓
@@ -552,6 +605,16 @@
                 <div class="price-highlight">
                     💰 Total Pembayaran: Rp {{ number_format($booking->total_price, 0, ',', '.') }}
                 </div>
+
+                {{-- PERUBAHAN: Menambahkan blok untuk QR Code yang hanya akan muncul saat dicetak --}}
+                @if($status === 'verified')
+                <div class="printable-only" style="text-align: center; margin-top: 15px;">
+                    <p style="font-size: 9pt; margin-bottom: 5px;">Pindai untuk validasi ulang</p>
+                    <img id="booking-qr-code" 
+                         src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={{ url()->current() }}" 
+                         alt="QR Code Booking">
+                </div>
+                @endif
             </div>
 
             <div class="timestamp">
