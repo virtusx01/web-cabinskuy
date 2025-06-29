@@ -202,28 +202,6 @@
         border-color: #c3e6cb;
     }
 
-    .qr-code-section {
-        text-align: center;
-        margin-top: 30px;
-        padding: 20px;
-        background-color: #f9f9f9;
-        border-radius: 8px;
-        border: 1px dashed #ccc;
-    }
-    .qr-code-section img {
-        display: block;
-        margin: 0 auto 15px auto;
-        border: 5px solid #fff;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        border-radius: 4px;
-    }
-    .qr-code-section p {
-        font-size: 1.1em;
-        color: #333;
-        font-weight: bold;
-    }
-
-
     @media (max-width: 768px) {
         .detail-item {
             flex-direction: column;
@@ -315,7 +293,7 @@
                 <h3>Informasi Kabin & Kamar</h3>
                 <div class="cabin-room-info">
                     <img src="{{ !empty($booking->room->room_photos) ? asset($booking->room->room_photos[0]) : 'https://via.placeholder.com/180x120/e9f5e9/333333?text=Room' }}"
-                             alt="{{ $booking->room->typeroom }}">
+                         alt="{{ $booking->room->typeroom }}">
                     <div class="cabin-room-details">
                         <h4>{{ $booking->cabin->name }}</h4>
                         <p>Tipe: {{ $booking->room->typeroom }}</p>
@@ -386,39 +364,32 @@
                 <span>{{ $booking->formatted_total_price }}</span>
             </div>
 
-            {{-- New section for QR Code --}}
-            @if ($qrCode)
-                <div class="qr-code-section">
-                    <h3>QR Code Booking</h3>
-                    <img src="{{ $qrCode }}" alt="QR Code for Booking #{{ $booking->id_booking }}">
-                    <p>Scan QR code ini untuk melihat detail booking Anda.</p>
-                </div>
-            @endif
+            {{-- Ganti keseluruhan div .action-buttons di booking_detail.blade.php --}}
 
-            <div class="action-buttons">
-                @if(in_array($booking->status, ['pending', 'challenge']))
-                    {{-- Tombol utama untuk melanjutkan pembayaran --}}
-                    <a href="{{ route('frontend.payment.show', $booking->id_booking) }}" class="btn btn-primary">Lanjutkan Pembayaran</a>
-                    
-                    {{-- Tombol sekunder untuk ganti metode pembayaran --}}
-                    <form action="{{ route('frontend.payment.change', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mengganti metode pembayaran? Transaksi yang sedang berjalan akan dibatalkan.');">
-                        @csrf
-                        <button type="submit" class="btn btn-secondary">Ganti Metode Pembayaran</button>
-                    </form>
+<div class="action-buttons">
+    @if(in_array($booking->status, ['pending', 'challenge']))
+        {{-- Tombol utama untuk melanjutkan pembayaran --}}
+        <a href="{{ route('frontend.payment.show', $booking->id_booking) }}" class="btn btn-primary">Lanjutkan Pembayaran</a>
+        
+        {{-- Tombol sekunder untuk ganti metode pembayaran --}}
+        <form action="{{ route('frontend.payment.change', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mengganti metode pembayaran? Transaksi yang sedang berjalan akan dibatalkan.');">
+            @csrf
+            <button type="submit" class="btn btn-secondary">Ganti Metode Pembayaran</button>
+        </form>
 
-                    {{-- Tombol untuk membatalkan booking --}}
-                    <form action="{{ route('frontend.booking.cancel', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?');">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="btn btn-danger">Batalkan Booking</button>
-                    </form>
+        {{-- Tombol untuk membatalkan booking --}}
+        <form action="{{ route('frontend.booking.cancel', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?');">
+            @csrf
+            @method('PATCH')
+            <button type="submit" class="btn btn-danger">Batalkan Booking</button>
+        </form>
 
-                @elseif($booking->status === 'confirmed')
-                    <button type="button" class="btn btn-primary btn-disabled" disabled>Telah Dikonfirmasi</button>
-                @else
-                    <a href="{{ route('frontend.booking.index') }}" class="btn btn-secondary">Kembali ke Daftar Booking</a>
-                @endif
-            </div>
+    @elseif($booking->status === 'confirmed')
+        <button type="button" class="btn btn-primary btn-disabled" disabled>Telah Dikonfirmasi</button>
+    @else
+        <a href="{{ route('frontend.booking.index') }}" class="btn btn-secondary">Kembali ke Daftar Booking</a>
+    @endif
+</div>
         </div>
     </div>
 </div>

@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth; // Tambahkan ini jika Anda ingin mendapatkan inisial dari Auth::user()
 use Illuminate\Support\Str; // Tambahkan ini untuk helper string
-use Illuminate\Support\Facades\DB;
 
 class Booking extends Model
 {
@@ -56,7 +55,6 @@ class Booking extends Model
         'status',
         'checkin_room',
         'snap_token',
-        'qr_access_token',
         'booking_date',
         'admin_notes',
         'confirmed_at',
@@ -289,7 +287,7 @@ class Booking extends Model
     /**
      * Cek apakah booking sudah lunas.
      */
-    public function iscompleted(): bool
+    public function isPaid(): bool
     {
         return $this->successfulPayment()->exists();
     }
@@ -297,7 +295,7 @@ class Booking extends Model
     /**
      * Mengambil total jumlah yang telah dibayarkan.
      */
-    public function getcompletedAmount(): float
+    public function getPaidAmount(): float
     {
         return (float) $this->payments()
                              ->where('status', 'completed')
@@ -354,35 +352,13 @@ class Booking extends Model
         if (!in_array($this->status, ['pending', 'challenge'])) {
             return false;
         }
-
-        // Generate a new, unique QR access token
-        $token = Str::random(32); // Use a sufficiently long random string (e.g., 32 characters for security)
-        while (self::where('qr_access_token', $token)->exists()) {
-            $token = Str::random(32); // Regenerate if by chance it's not unique
-        }
-
-        $confirmed = $this->update([
-            'status'            => 'confirmed',
-            'confirmed_at'      => now(),
-            'confirmed_by'      => $adminId,
-            'admin_notes'       => $notes,
-            'qr_access_token'   => $token, // <<< SET TOKEN DI SINI
+        
+        return $this->update([
+            'status'        => 'confirmed',
+            'confirmed_at'  => now(),
+            'confirmed_by'  => $adminId,
+            'admin_notes'   => $notes,
         ]);
-
-        // If confirmation successful, check for a suitable payment
-        if ($confirmed) {
-            $validPayment = $this->payments()
-                ->where('status', '!=', 'completed')
-                ->where('amount', '>=', $this->total_price)
-                ->latest()
-                ->first();
-
-            if ($validPayment) {
-                $validPayment->update(['status' => 'completed']);
-            }
-        }
-
-        return $confirmed;
     }
 
     /**
@@ -442,47 +418,10 @@ class Booking extends Model
     /**
      * Method untuk menandai booking sebagai completed.
      */
-    public function markAscompleted(): bool
+    public function markAsCompleted(): bool
     {
         return $this->update([
             'status' => 'completed'
         ]);
-    }
-
-    public function confirmBooking($adminId, $notes = null): bool
-    {
-        // Use $this->status and $this->total_price directly as they are model attributes
-        if (!in_array($this->status, ['pending', 'challenge'])) {
-        return false;
-    }
-
-    $token = Str::random(32);
-    while (self::where('qr_access_token', $token)->exists()) {
-        $token = Str::random(32);
-    }
-
-    $confirmed = $this->update([
-        'status'        => 'confirmed',
-        'confirmed_at'  => now(),
-        'confirmed_by'  => $adminId,
-        'admin_notes'   => $notes,
-        'qr_access_token' => $token, // <<< TAMBAHKAN INI
-    ]);
-
-        // If confirmation successful, check for a suitable payment
-        if ($confirmed) {
-            $validPayment = $this->payments()
-                ->where('status', '!=', 'completed') // Payments not yet completed
-                ->where('amount', '>=', $this->total_price)
-                ->latest()
-                ->first();
-
-            if ($validPayment) {
-                // If a valid payment is found, update its status to completed
-                $validPayment->update(['status' => 'completed']);
-            }
-        }
-
-        return $confirmed;
     }
 }

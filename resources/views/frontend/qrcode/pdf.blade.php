@@ -23,6 +23,7 @@
     <div class="header">
         <h1>Konfirmasi Booking Anda</h1>
         <p>ID Booking: #{{ $booking->id_booking }}</p>
+        {{-- Access transaction__id directly as passed from controller --}}
         @if ($transaction__id !== 'N/A')
             <div class="invoice-number">Invoice Number: <strong>{{ $transaction__id }}</strong></div>
         @endif

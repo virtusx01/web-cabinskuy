@@ -278,27 +278,7 @@
         @endif
 
         <div class="booking-list-container">
-            {{-- Define safeJsonDecode function here or ensure it's globally available --}}
-            @php
-                function safeJsonDecode($data) {
-                    if (is_string($data)) {
-                        $decoded = json_decode($data, true);
-                        // Check for double encoding
-                        if (is_array($decoded) && !empty($decoded) && is_string($decoded[0])) {
-                            $decoded = json_decode($decoded[0], true);
-                        }
-                        return is_array($decoded) ? $decoded : [];
-                    }
-                    return is_array($data) ? $data : [];
-                }
-                $roomDefaultPlaceholder = 'https://via.placeholder.com/150x100/e9f5e9/333333?text=Room';
-            @endphp
-
             @forelse ($bookings as $booking)
-                @php
-                    $roomPhotos = safeJsonDecode($booking->room->room_photos);
-                    $imageUrl = !empty($roomPhotos) ? asset('storage/' . str_replace('\\', '/', $roomPhotos[0])) : $roomDefaultPlaceholder;
-                @endphp
                 <div class="booking-card">
                     <div class="booking-card-header">
                         <h5>Booking ID: <span class="booking-id">#{{ $booking->id_booking }}</span></h5>
@@ -307,8 +287,8 @@
                         </span>
                     </div>
                     <div class="booking-card-body">
-                        <img src="{{ $imageUrl }}"
-                            alt="{{ $booking->room->typeroom }}" class="booking-card-image">
+                        <img src="{{ !empty($booking->room->room_photos) ? asset($booking->room->room_photos[0]) : 'https://via.placeholder.com/150x100/e9f5e9/333333?text=Room' }}"
+                             alt="{{ $booking->room->typeroom }}" class="booking-card-image">
                         <div class="booking-card-details">
                             <h4>{{ $booking->room->typeroom }} Cabin at {{ $booking->cabin->name }}</h4>
                             <p>Lokasi: {{ $booking->cabin->location_address }}</p>
@@ -340,14 +320,13 @@
                         <a href="{{ route('frontend.booking.show', $booking->id_booking) }}" class="btn btn-detail">
                             Lihat Detail
                         </a>
-                        {{-- PERBAIKAN: Tombol "Tidak Dapat Dibatalkan" hanya muncul jika TIDAK bisa dibatalkan DAN statusnya BUKAN cancelled --}}
                         @if ($booking->canBeCancelled())
                             <form action="{{ route('frontend.booking.cancel', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?');">
                                 @csrf
                                 @method('PATCH')
                                 <button type="submit" class="btn btn-cancel">Batalkan Booking</button>
                             </form>
-                        @elseif ($booking->status !== 'cancelled') {{-- Hanya tampilkan tombol disabled jika tidak bisa dibatalkan DAN BUKAN cancelled --}}
+                        @else
                             <button type="button" class="btn btn-cancel btn-disabled" disabled>Tidak Dapat Dibatalkan</button>
                         @endif
                     </div>
