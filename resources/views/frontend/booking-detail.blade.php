@@ -254,7 +254,7 @@
     <div class="container">
         <nav class="breadcrumb">
             <a href="{{ route('frontend.beranda') }}">Home</a> >
-            <a href="{{ route('frontend.booking.index') }}">My Bookings</a> >
+            <a href="{{ route('frontend.booking.index') }}">My Bookings</a> > {{-- CORRECTED LINE --}}
             <span>Detail Booking #{{ $booking->id_booking }}</span>
         </nav>
 
@@ -315,7 +315,7 @@
                 <h3>Informasi Kabin & Kamar</h3>
                 <div class="cabin-room-info">
                     <img src="{{ !empty($booking->room->room_photos) ? asset($booking->room->room_photos[0]) : 'https://via.placeholder.com/180x120/e9f5e9/333333?text=Room' }}"
-                                 alt="{{ $booking->room->typeroom }}">
+                             alt="{{ $booking->room->typeroom }}">
                     <div class="cabin-room-details">
                         <h4>{{ $booking->cabin->name }}</h4>
                         <p>Tipe: {{ $booking->room->typeroom }}</p>
@@ -387,13 +387,11 @@
             </div>
 
             {{-- New section for QR Code --}}
-            {{-- Now qrCodeImageBase64 contains the base64 image of QR code linking to PDF --}}
-            @if ($qrCodeImageBase64)
+            @if ($qrCode)
                 <div class="qr-code-section">
                     <h3>QR Code Booking</h3>
-                    <img src="{{ $qrCodeImageBase64 }}" alt="QR Code for Booking #{{ $booking->id_booking }}">
+                    <img src="{{ $qrCode }}" alt="QR Code for Booking #{{ $booking->id_booking }}">
                     <p>Scan QR code ini untuk melihat detail booking Anda.</p>
-                    <p class="mt-2 text-muted" style="font-size: 0.85em;">Atau <a href="{{ route('frontend.booking.pdf', ['identifier' => $booking->qr_access_token]) }}" target="_blank">klik di sini untuk mengunduh PDF</a>.</p>
                 </div>
             @endif
 
@@ -401,7 +399,7 @@
                 @if(in_array($booking->status, ['pending', 'challenge']))
                     {{-- Tombol utama untuk melanjutkan pembayaran --}}
                     <a href="{{ route('frontend.payment.show', $booking->id_booking) }}" class="btn btn-primary">Lanjutkan Pembayaran</a>
-
+                    
                     {{-- Tombol sekunder untuk ganti metode pembayaran --}}
                     <form action="{{ route('frontend.payment.change', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mengganti metode pembayaran? Transaksi yang sedang berjalan akan dibatalkan.');">
                         @csrf
@@ -417,10 +415,6 @@
 
                 @elseif($booking->status === 'confirmed')
                     <button type="button" class="btn btn-primary btn-disabled" disabled>Telah Dikonfirmasi</button>
-                    {{-- Optionally, add a direct PDF download button here too for convenience --}}
-                    @if ($booking->qr_access_token)
-                        <a href="{{ route('frontend.booking.pdf', ['identifier' => $booking->qr_access_token]) }}" target="_blank" class="btn btn-secondary">Unduh PDF Konfirmasi</a>
-                    @endif
                 @else
                     <a href="{{ route('frontend.booking.index') }}" class="btn btn-secondary">Kembali ke Daftar Booking</a>
                 @endif
@@ -445,16 +439,7 @@
             fetch(pollingUrl)
                 .then(response => {
                     if (!response.ok) {
-                        // If response is not OK, stop polling and log error
-                        clearInterval(pollingInterval);
-                        console.error('Network response was not ok during polling:', response.statusText);
-                        const pollingDiv = document.getElementById('payment-polling-status');
-                        if (pollingDiv) {
-                            pollingDiv.classList.remove('alert-info');
-                            pollingDiv.classList.add('alert-danger');
-                            pollingDiv.innerHTML = '<span>Terjadi kesalahan saat mengecek status. Silakan muat ulang halaman.</span>';
-                        }
-                        return Promise.reject('Network error'); // Propagate error
+                        throw new Error('Network response was not ok');
                     }
                     return response.json();
                 })
@@ -479,9 +464,8 @@
                 })
                 .catch(error => {
                     console.error('Error during polling:', error);
-                    // You might want to stop polling after a few errors, or show a more specific message
-                    // For now, it logs and continues if it's a fetch error, but stops for network errors.
-                    // clearInterval(pollingInterval); // Uncomment to stop polling on any error
+                    // Anda bisa memutuskan untuk menghentikan polling jika terjadi error
+                    // clearInterval(pollingInterval); 
                 });
         }
 
@@ -489,8 +473,7 @@
         pollingInterval = setInterval(pollStatus, 5000);
 
         // Jalankan polling pertama kali tanpa menunggu 5 detik
-        // Removed initial call, as the spinner already indicates pending.
-        // The first update will happen after the first interval (5 seconds).
+        pollStatus();
     });
 </script>
 @endif
