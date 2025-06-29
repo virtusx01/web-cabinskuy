@@ -64,6 +64,7 @@ class Booking extends Model
         'rejection_reason',
         'cancelled_at',
         'cancellation_reason',
+        'qr_validation_token',
     ];
 
     /**

@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 // PERBAIKI INI: Nama kelas yang benar dengan namespace lengkapnya
@@ -286,46 +287,52 @@ class BookingController extends Controller
      * Menampilkan detail booking
      */
     public function show(Booking $booking)
-{
-    try {
-        if ($booking->id_user !== Auth::user()->id_user) {
-            abort(403, 'Anda tidak memiliki akses untuk melihat booking ini.');
-        }
+    {
+        try {
+            if ($booking->id_user !== Auth::user()->id_user) {
+                abort(403, 'Anda tidak memiliki akses untuk melihat booking ini.');
+            }
 
-        $booking->load(['cabin', 'room', 'user', 'payments']);
+            $booking->load(['cabin', 'room', 'user', 'payments']);
 
-        $qrCode = null;
+            $qrCode = null;
 
-        // QRCode hanya dibuat jika booking sudah confirmed dan ada pembayaran berhasil
-        if ($booking->status === 'confirmed' && $booking->successfulPayment()->exists()) {
-            $options = new QROptions([
-                'outputType'    => QRCode::OUTPUT_IMAGE_PNG,
-                'eccLevel'      => QRCode::ECC_L,
-                'scale'         => 5,
-                'imageBase64'   => true,
+            // QRCode hanya dibuat jika booking sudah confirmed dan ada pembayaran berhasil
+            if ($booking->status === 'confirmed' && $booking->successfulPayment()->exists()) {
+                // Generate atau ambil QR validation token
+                if (empty($booking->qr_validation_token)) {
+                    $booking->update([
+                        'qr_validation_token' => Str::random(64)
+                    ]);
+                }
+
+                $options = new QROptions([
+                    'outputType'    => QRCode::OUTPUT_IMAGE_PNG,
+                    'eccLevel'      => QRCode::ECC_L,
+                    'scale'         => 5,
+                    'imageBase64'   => true,
+                ]);
+
+                $qr = new QRCode($options);
+
+                // URL tujuan scan QR Code (halaman validasi public)
+                $qrContent = route('frontend.qr.validate', ['token' => $booking->qr_validation_token]);
+
+                $qrCode = $qr->render($qrContent);
+            }
+
+            return view('frontend.booking-detail', [
+                'booking' => $booking,
+                'title'   => 'Detail Booking #' . $booking->id_booking,
+                'qrCode'  => $qrCode,
             ]);
 
-            $qr = new QRCode($options);
-
-            // URL tujuan scan QR Code (halaman detail booking)
-            $qrContent = route('frontend.booking.show', ['booking' => $booking->id_booking]);
-
-            $qrCode = $qr->render($qrContent);
+        } catch (\Exception $e) {
+            Log::error('Error in show booking: ' . $e->getMessage(), ['exception' => $e]);
+            return redirect()->route('frontend.beranda')
+                ->withErrors(['error' => 'Terjadi kesalahan saat memuat detail booking.']);
         }
-
-        return view('frontend.booking-detail', [
-            'booking' => $booking,
-            'title'   => 'Detail Booking #' . $booking->id_booking,
-            'qrCode'  => $qrCode,
-        ]);
-
-    } catch (\Exception $e) {
-        Log::error('Error in show booking: ' . $e->getMessage(), ['exception' => $e]);
-        return redirect()->route('frontend.beranda')
-            ->withErrors(['error' => 'Terjadi kesalahan saat memuat detail booking.']);
     }
-}
-
 
     /**
      * Membatalkan booking (hanya untuk status pending, pending, challenge)
@@ -406,5 +413,89 @@ class BookingController extends Controller
             'status_label' => $booking->status_label,
             'payment_status_label' => $booking->latestPayment(),
         ]);
+    }
+
+    /**
+     * FUNGSI BARU: Halaman validasi QR Code (Public Access)
+     * Dapat diakses tanpa login untuk memvalidasi booking
+     */
+    public function validateQrCode(Request $request, $token)
+    {
+        try {
+            // Cari booking berdasarkan QR validation token
+            $booking = Booking::where('qr_validation_token', $token)
+                ->with(['cabin', 'room', 'user', 'payments'])
+                ->first();
+
+            if (!$booking) {
+                return view('frontend.qr-validation', [
+                    'title' => 'QR Code Tidak Valid',
+                    'status' => 'invalid',
+                    'message' => 'QR Code yang Anda scan tidak valid atau telah kedaluwarsa.',
+                    'booking' => null
+                ]);
+            }
+
+            // Cek apakah booking sudah confirmed dan ada pembayaran berhasil
+            if ($booking->status !== 'confirmed' || !$booking->successfulPayment()->exists()) {
+                return view('frontend.qr-validation', [
+                    'title' => 'Booking Belum Terverifikasi',
+                    'status' => 'unverified',
+                    'message' => 'Booking ini belum dikonfirmasi atau pembayaran belum berhasil.',
+                    'booking' => $booking
+                ]);
+            }
+
+            // Booking valid dan terverifikasi
+            return view('frontend.qr-validation', [
+                'title' => 'Booking Terverifikasi',
+                'status' => 'verified',
+                'message' => 'Booking ini telah terverifikasi oleh sistem.',
+                'booking' => $booking
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in validateQrCode: ' . $e->getMessage(), ['exception' => $e]);
+            return view('frontend.qr-validation', [
+                'title' => 'Terjadi Kesalahan',
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan saat memvalidasi QR Code.',
+                'booking' => null
+            ]);
+        }
+    }
+
+    /**
+     * FUNGSI BARU: Generate ulang QR validation token (untuk admin/system)
+     * Berguna jika token perlu di-refresh untuk keamanan
+     */
+    public function regenerateQrToken(Booking $booking)
+    {
+        try {
+            // Pastikan booking sudah confirmed
+            if ($booking->status !== 'confirmed') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'QR token hanya dapat dibuat untuk booking yang sudah dikonfirmasi.'
+                ], 400);
+            }
+
+            // Generate token baru
+            $newToken = Str::random(64);
+            $booking->update(['qr_validation_token' => $newToken]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'QR validation token berhasil di-generate ulang.',
+                'new_token' => $newToken
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in regenerateQrToken: ' . $e->getMessage(), ['exception' => $e]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat generate QR token.'
+            ], 500);
+        }
     }
 }

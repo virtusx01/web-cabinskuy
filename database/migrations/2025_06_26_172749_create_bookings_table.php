@@ -49,7 +49,6 @@ return new class extends Migration
             // PENJELASAN: Status 'confirmed' dan 'pending' akan kita gunakan untuk menghitung slot yang terisi.
             // PERBAIKAN: Tambahkan 'initiated', 'challenge' (dari Midtrans), 'failed', 'expired' untuk konsistensi dengan model Payment.
             $table->string('snap_token')->nullable();
-            $table->string('qr_access_token', 64)->unique()->nullable();
             $table->enum('status', ['pending', 'confirmed', 'rejected', 'cancelled', 'completed', 'challenge', 'expired', 'failed'])->default('pending');
             $table->timestamp('booking_date')->useCurrent(); // Default to current timestamp
 
@@ -68,7 +67,7 @@ return new class extends Migration
 
             $table->timestamp('cancelled_at')->nullable();
             $table->text('cancellation_reason')->nullable();
-
+            $table->string('qr_validation_token', 64)->unique()->nullable();
             $table->timestamps(); // created_at dan updated_at
 
             // --- Indexes untuk Performa ---
