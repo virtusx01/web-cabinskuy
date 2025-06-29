@@ -127,4 +127,4 @@ Route::get('/qr/validate/{token}', [QRCodeController::class, 'validateQRCode'])-
 Route::get('/api/qr/validate/{token}', [QRCodeController::class, 'validateQRCodeAPI'])->name('api.qr.validate');
 
 // ROUTE BARU UNTUK DOWNLOAD PDF VALIDASI
-Route::get('/qr/validate/{token}/pdf', [QRCodeController::class, 'downloadValidationPDF'])->name('qr.validation.pdf');
+Route::get('/qr/pdf/{token}', [QRCodeController::class, 'generatePdf'])->name('qr.pdf');

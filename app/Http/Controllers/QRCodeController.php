@@ -8,9 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str; // Still needed for `generateUniqueToken` if you keep it.
 use Illuminate\Support\Facades\DB;
 use chillerlan\QRCode\QRCode; // Not strictly needed if this controller doesn't render QR images
-use chillerlan\QRCode\QROptions;
-
-use Barryvdh\DomPDF\Facade\Pdf; // Not strictly needed if this controller doesn't render QR images
+use chillerlan\QRCode\QROptions; // Not strictly needed if this controller doesn't render QR images
 
 class QRCodeController extends Controller
 {
@@ -278,55 +276,49 @@ class QRCodeController extends Controller
         }
     }
 
-    public function downloadValidationPDF($token)
+    public function generatePdf($token)
     {
         try {
-            // 1. Ambil data booking berdasarkan token
+            // 1. Find booking by token (sama seperti di validateQRCode)
             $booking = Booking::with(['cabin', 'room', 'user', 'latestPayment'])
                 ->where('qr_validation_token', $token)
-                ->firstOrFail(); // Gunakan firstOrFail untuk otomatis 404 jika tidak ketemu
+                ->firstOrFail(); // Gunakan firstOrFail untuk error handling otomatis jika tidak ketemu
 
-            // 2. Validasi status booking dan pembayaran (menggunakan logika 'settlement' yang sudah kita perbaiki)
+            // 2. Validasi status booking dan pembayaran (SANGAT PENTING!)
+            // Pastikan Anda sudah menerapkan perbaikan dari masalah sebelumnya (menggunakan 'settlement')
             if ($booking->status !== 'confirmed' || !$booking->successfulPayment()->exists()) {
-                // Jika booking tidak valid, redirect kembali dengan error
-                return redirect()->back()->withErrors(['error' => 'PDF tidak dapat dibuat. Status booking atau pembayaran tidak valid.']);
+                // Jika booking tidak valid untuk dicetak, kembalikan ke halaman error
+                return response("Dokumen tidak dapat dibuat. Booking belum terkonfirmasi atau pembayaran belum lunas.", 403);
             }
 
-            // 3. Generate gambar QR Code dalam format base64 untuk disisipkan di PDF
+            // 3. Ambil data tambahan yang diperlukan untuk PDF
+            $latestPayment = $booking->latestPayment;
+            $transaction_id = $latestPayment ? $latestPayment->transaction_id : 'N/A';
+
+            // 4. Generate QR Code Image (base64) untuk ditampilkan di PDF
             $qrValidationUrl = route('qr.validate', ['token' => $booking->qr_validation_token]);
             $options = new QROptions([
-                'outputType'  => QRCode::OUTPUT_IMAGE_PNG,
-                'imageBase64' => true,
-                'scale'       => 8, // Buat QR code sedikit lebih besar untuk PDF
+                'outputType' => QRCode::OUTPUT_IMAGE_PNG,
+                'eccLevel'   => QRCode::ECC_L,
+                'scale'      => 5,
+                'imageBase64'=> true,
             ]);
             $qrCodeImage = (new QRCode($options))->render($qrValidationUrl);
 
-            // Data yang akan dikirim ke view PDF
-            $data = [
-                'booking'     => $booking,
-                'qrCodeImage' => $qrCodeImage,
-                'title'       => 'Validasi Booking - ' . $booking->id_booking,
-            ];
-
-            // 4. Load view PDF dan kirim sebagai download
-            $pdf = Pdf::loadView('frontend.qrcode-pdf', $data);
-
-            // Nama file yang akan di-download
-            $fileName = 'bukti_validasi_' . $booking->id_booking . '.pdf';
-
-            return $pdf->download($fileName);
+            // 5. Kembalikan view baru yang khusus untuk PDF
+            return view('frontend.qrcode-pdf', [
+                'booking'        => $booking,
+                'title'          => 'Konfirmasi Booking - ' . $booking->id_booking,
+                'transaction_id' => $transaction_id, // Kirim transaction_id ke view
+                'qrCodeImage'    => $qrCodeImage,    // Kirim gambar QR Code ke view
+            ]);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            // Handle jika booking dengan token itu tidak ada
-            return view('frontend.qr-validation', [
-                'status' => 'invalid',
-                'title' => 'Booking Tidak Ditemukan',
-                'message' => 'Booking dengan QR Code ini tidak ditemukan.',
-                'booking' => null
-            ]);
+            Log::warning('PDF generation attempt for invalid token: ' . $token);
+            return response("Booking dengan token ini tidak ditemukan.", 404);
         } catch (\Exception $e) {
-            Log::error('Error generating PDF for QR validation: ' . $e->getMessage(), ['token' => $token]);
-            return redirect()->back()->withErrors(['error' => 'Terjadi kesalahan saat membuat file PDF.']);
+            Log::error('Error generating PDF for token: ' . $e->getMessage(), ['token' => $token]);
+            return response("Terjadi kesalahan saat membuat dokumen.", 500);
         }
     }
 }

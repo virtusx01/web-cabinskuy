@@ -487,9 +487,8 @@
             <a href="{{ route('frontend.beranda') }}" class="btn btn-primary">🏠 Kembali ke Beranda</a>
             
             @if($booking && $status === 'verified')
-                {{-- Ganti tombol yang lama dengan link ini --}}
-                <a href="{{ route('qr.validation.pdf', ['token' => $booking->qr_validation_token]) }}" target="_blank" class="btn btn-primary">
-                    <i class="fas fa-print"></i> Cetak Validasi (PDF)
+                <a href="{{ route('qr.pdf', ['token' => $booking->qr_validation_token]) }}" target="_blank" class="btn btn-primary">
+                    Cetak Validasi (PDF)
                 </a>
             @endif
         </div>
