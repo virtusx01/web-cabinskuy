@@ -16,7 +16,7 @@ return new class extends Migration
 
             // Foreign Key untuk Booking
             // Menghubungkan ke tabel 'bookings' menggunakan id_booking sebagai primary key di tabel bookings
-            $table->unsignedInteger('id_booking'); // Menggunakan unsignedInteger karena id_booking di bookings adalah increments()
+            $table->string('id_booking', 25); // Menggunakan unsignedInteger karena id_booking di bookings adalah increments()
             $table->foreign('id_booking')->references('id_booking')->on('bookings')->onDelete('cascade');
 
             // --- Payment Details ---

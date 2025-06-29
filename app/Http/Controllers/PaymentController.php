@@ -67,7 +67,7 @@ class PaymentController extends Controller
         if ($booking->id_user !== (Auth::user()->id_user ?? null)) {
             return response()->json(['error' => 'Akses tidak diizinkan.'], 403);
         }
-        if ($booking->isPaid()) {
+        if ($booking->iscompleted()) {
             return response()->json(['error' => 'Booking ini sudah lunas.'], 400);
         }
 
@@ -184,9 +184,11 @@ class PaymentController extends Controller
      */
     public function handleNotification(Request $request)
     {
+        Log::info("Midtrans Webhook - Received new notification."); // Log the start of the webhook
+        $notif = null;
         try {
-            // Ini akan membaca dari php://input secara otomatis
-            $notif = new Notification();
+            // It automatically reads from php://input
+            $notif = new Notification(); // This can throw an exception if input is invalid/empty
 
             $transactionStatus = $notif->transaction_status;
             $fraudStatus = $notif->fraud_status;
@@ -194,85 +196,118 @@ class PaymentController extends Controller
             $statusCode = $notif->status_code;
             $grossAmount = $notif->gross_amount;
 
-            // Log payload notifikasi untuk debugging
-            Log::info("Midtrans Notification Received: " . json_encode($notif));
+            // Log full payload for debugging
+            Log::info("Midtrans Webhook - Payload: " . json_encode($notif->getResponse())); // Use getResponse() for the full decoded payload
 
-            // Validasi Signature Key (SANGAT PENTING DI PRODUCTION)
-            // Uncomment dan setel 'midtrans.server_key' di config/midtrans.php
+            // Signature Key Validation (CRITICAL FOR PRODUCTION)
+            // Ensure Config::$serverKey is correctly loaded from your .env
             $signatureKey = hash('sha512', $orderId . $statusCode . $grossAmount . Config::$serverKey);
             if ($notif->signature_key != $signatureKey) {
-                Log::error("Invalid signature key for order_id: {$orderId}. Expected: {$signatureKey}, Received: {$notif->signature_key}");
-                return response()->json(['message' => 'Invalid signature.'], 403);
+                Log::error("Midtrans Webhook - Invalid signature key for order_id: {$orderId}. Expected: {$signatureKey}, Received: {$notif->signature_key}");
+                return response()->json(['message' => 'Invalid signature.'], 403); // Return 403 for security
             }
+            Log::info("Midtrans Webhook - Signature key validated successfully for order_id: {$orderId}.");
 
-            // Cari payment berdasarkan transaction_id
+            // Find payment based on transaction_id (order_id from Midtrans)
             $payment = Payment::where('transaction_id', $orderId)->first();
 
             if (!$payment) {
-                Log::warning("Webhook received for unknown transaction_id: {$orderId}");
+                Log::warning("Midtrans Webhook - Unknown transaction_id: {$orderId}. No matching payment record found.");
                 return response()->json(['message' => 'Transaction not found.'], 404);
             }
+            Log::info("Midtrans Webhook - Found payment #{$payment->id_payment} for order_id: {$orderId}. Current status: {$payment->status}.");
 
-            // Hindari pemrosesan ganda jika status sudah final
-            if (in_array($payment->status, ['completed', 'failed', 'cancelled', 'expired', 'rejected'])) {
-                Log::info("Notification for order_id: {$orderId} already processed with status: {$payment->status}");
+
+            // Prevent double processing if status is already final
+            // This is important to avoid unexpected state changes
+            if (in_array($payment->status, ['completed', 'failed', 'cancelled', 'expired', 'rejected', 'settlement'])) { // Added 'settlement' as a final state from Midtrans
+                Log::info("Midtrans Webhook - Notification for order_id: {$orderId} already processed with final status: {$payment->status}. Skipping update.");
                 return response()->json(['message' => 'Notification already processed.'], 200);
             }
 
-            DB::transaction(function () use ($payment, $notif, $transactionStatus, $fraudStatus) {
-                $newPaymentStatus = $payment->status; // Default to current status
-                $booking = $payment->booking; // Asumsi ada relasi booking di model Payment
-                $newBookingStatus = $booking->status; // Default to current booking status
+            // Begin database transaction for atomic updates
+            DB::beginTransaction();
+            Log::info("Midtrans Webhook - Starting DB transaction for order_id: {$orderId}.");
 
-                if ($transactionStatus == 'capture') {
-                    if ($fraudStatus == 'challenge') {
-                        $newPaymentStatus = 'challenge';
-                        $newBookingStatus = 'challenge'; // Booking juga jadi challenge
-                    } else if ($fraudStatus == 'accept') {
-                        $newPaymentStatus = 'completed';
-                        $newBookingStatus = 'confirmed'; // Booking dikonfirmasi jika pembayaran selesai
-                    }
-                } elseif ($transactionStatus == 'settlement') {
+            $newPaymentStatus = $payment->status; // Default to current status
+            $booking = $payment->booking; // Assuming a 'booking' relation exists in Payment model
+            $newBookingStatus = $booking->status; // Default to current booking status
+
+            // === Midtrans Status Mapping Logic ===
+            // This logic appears correct based on Midtrans documentation for common flows.
+            if ($transactionStatus == 'capture') {
+                if ($fraudStatus == 'challenge') {
+                    $newPaymentStatus = 'challenge';
+                    $newBookingStatus = 'challenge';
+                } else if ($fraudStatus == 'accept') {
                     $newPaymentStatus = 'completed';
-                    $newBookingStatus = 'confirmed'; // Booking dikonfirmasi
-                } elseif ($transactionStatus == 'pending') {
-                    $newPaymentStatus = 'pending';
-                    $newBookingStatus = 'pending'; // Booking tetap pending
-                } elseif ($transactionStatus == 'deny') {
-                    $newPaymentStatus = 'failed';
-                    $newBookingStatus = 'rejected'; // Booking ditolak
-                } elseif ($transactionStatus == 'expire') {
-                    $newPaymentStatus = 'expired';
-                    $newBookingStatus = 'cancelled'; // Booking dibatalkan
-                } elseif ($transactionStatus == 'cancel') {
-                    $newPaymentStatus = 'cancelled';
-                    $newBookingStatus = 'cancelled'; // Booking dibatalkan
+                    $newBookingStatus = 'confirmed';
                 }
-
-                $payment->update([
-                    'status'         => $newPaymentStatus,
-                    'payment_method' => $notif->payment_type,
-                    'payment_details' => (array) $notif, // Simpan seluruh payload notif
-                ]);
-
-                if ($booking) {
-                    // Hanya update status booking jika ada perubahan
-                    if ($booking->status !== $newBookingStatus) {
-                        $booking->update(['status' => $newBookingStatus]);
-                        Log::info("Booking #{$booking->id_booking} status updated to '{$newBookingStatus}' from Midtrans webhook.");
-                    }
+            } elseif ($transactionStatus == 'settlement') {
+                $newPaymentStatus = 'completed';
+                $newBookingStatus = 'confirmed';
+            } elseif ($transactionStatus == 'pending') {
+                $newPaymentStatus = 'pending';
+                // Booking status remains 'pending' if payment is still pending.
+                // It might already be 'challenge' from a previous notification, keep it if so.
+                // If it was 'pending' before, it remains 'pending'.
+                // No change to $newBookingStatus if it's already 'challenge'.
+                if ($newBookingStatus !== 'challenge') {
+                    $newBookingStatus = 'pending';
                 }
-            });
+            } elseif ($transactionStatus == 'deny') {
+                $newPaymentStatus = 'failed';
+                $newBookingStatus = 'rejected';
+            } elseif ($transactionStatus == 'expire') {
+                $newPaymentStatus = 'expired';
+                $newBookingStatus = 'cancelled'; // Or 'expired' if you have that specific status for booking
+            } elseif ($transactionStatus == 'cancel') { // User-initiated cancel through Midtrans or via API
+                $newPaymentStatus = 'cancelled';
+                $newBookingStatus = 'cancelled';
+            }
+            // Add other Midtrans transaction_status types if your business logic requires
+            // e.g., 'refund', 'partial_refund', 'authorize' (for card pre-auth)
 
+            Log::info("Midtrans Webhook - Determined new statuses for order_id: {$orderId}. Payment: {$newPaymentStatus}, Booking: {$newBookingStatus}.");
+
+            // Update payment record
+            $payment->update([
+                'status'        => $newPaymentStatus,
+                'payment_method' => $notif->payment_type, // This might be null for certain status types (e.g., expire)
+                'payment_details' => (array) $notif->getResponse(), // Store full JSON response as array
+            ]);
+            Log::info("Midtrans Webhook - Payment #{$payment->id_payment} updated to '{$newPaymentStatus}'.");
+
+
+            // Update booking record
+            if ($booking) {
+                // Only update booking status if there's an actual change
+                if ($booking->status !== $newBookingStatus) {
+                    $booking->update(['status' => $newBookingStatus]);
+                    Log::info("Midtrans Webhook - Booking #{$booking->id_booking} status updated to '{$newBookingStatus}'.");
+                } else {
+                    Log::info("Midtrans Webhook - Booking #{$booking->id_booking} status remains '{$newBookingStatus}'. No change needed.");
+                }
+            } else {
+                Log::warning("Midtrans Webhook - Booking not found for payment #{$payment->id_payment}. This should not happen if relations are correctly set.");
+            }
+
+            DB::commit(); // Commit the transaction
+            Log::info("Midtrans Webhook - DB transaction committed successfully for order_id: {$orderId}.");
             return response()->json(['message' => 'Notification processed successfully.'], 200);
 
         } catch (\Exception $e) {
-            Log::error('Error handling Midtrans notification: ' . $e->getMessage(), [
-                'order_id'        => $request->input('order_id') ?? 'N/A', // Gunakan request input untuk order_id jika notif object belum terisi
-                'trace'           => $e->getTraceAsString(),
+            DB::rollback(); // Rollback on any exception
+            Log::error('Midtrans Webhook - Fatal Error processing notification: ' . $e->getMessage(), [
+                'order_id'        => $orderId ?? ($notif->order_id ?? ($request->input('order_id') ?? 'N/A')),
+                'exception_class' => get_class($e),
+                'file'            => $e->getFile(),
+                'line'            => $e->getLine(),
+                'trace'           => $e->getTraceAsString(), // Full stack trace for deep debugging
                 'request_payload' => $request->all(), // Log entire request payload
             ]);
-            return response()->json(['error' => 'Internal Server Error'], 500);
+            // Return 500 to Midtrans so they know it failed and might retry (depends on their retry policy)
+            return response()->json(['error' => 'Internal Server Error during processing.'], 500);
         }
     }
 
@@ -303,7 +338,7 @@ class PaymentController extends Controller
         if ($booking->id_user !== (Auth::user()->id_user ?? null)) {
             abort(403, 'Akses tidak diizinkan.');
         }
-        if ($booking->isPaid()) {
+        if ($booking->iscompleted()) {
             return redirect()->back()->withErrors(['error' => 'Booking ini sudah lunas, metode pembayaran tidak dapat diganti.']);
         }
 
@@ -346,4 +381,6 @@ class PaymentController extends Controller
             return redirect()->back()->withErrors(['error' => 'Gagal mengganti metode pembayaran. Silakan coba lagi.']);
         }
     }
+
+    
 }

@@ -32,10 +32,17 @@ class LoginController extends Controller
             }
 
             // If the user is active, proceed with role-based redirection
-            if (Auth::user()->role == 'admin') {
+            $userRole = Auth::user()->role; // Get the user's role
+
+            if ($userRole == 'admin' || $userRole == 'superadmin') {
+                // If role is 'admin' OR 'superadmin', redirect to admin dashboard
                 return redirect()->route('admin.beranda');
-            } else {
+            } elseif ($userRole == 'customer') {
+                // If role is 'customer', redirect to frontend beranda
                 return redirect()->route('frontend.beranda');
+            } else {
+                // Fallback for any other unexpected roles, or default redirection
+                return redirect()->intended('/'); // Redirect to a default page, or specific 'customer' dashboard
             }
         }
 

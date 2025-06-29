@@ -250,7 +250,12 @@
                             <td>{{ \Carbon\Carbon::parse($booking->booking_date)->format('d M Y H:i') }}</td>
                             <td>
                                 <a href="{{ route('admin.bookings.show', $booking->id_booking) }}" class="btn btn-info btn-sm">Detail</a>
-                                @if ($booking->status !== 'completed' && $booking->status !== 'rejected' && $booking->status !== 'cancelled')
+                                {{-- PERBAIKAN: HANYA SUPERADMIN YANG BISA MELIHAT DAN MELAKUKAN AKSI HAPUS --}}
+                                @if (Auth::check() && Auth::user()->isSuperAdmin())
+                                    {{-- Cek status booking untuk tombol delete di halaman index (opsional) --}}
+                                    {{-- Misalnya, Anda hanya ingin memungkinkan penghapusan booking yang sudah selesai, ditolak, atau dibatalkan --}}
+                                    {{-- Atau Anda ingin memungkinkan penghapusan regardless of status for superadmin --}}
+                                    {{-- Untuk tujuan ini, kita akan tampilkan untuk superadmin saja --}}
                                     <form action="{{ route('admin.bookings.destroy', $booking->id_booking) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus booking ini? Tindakan ini tidak bisa dibatalkan.');">
                                         @csrf
                                         @method('DELETE')

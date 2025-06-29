@@ -288,7 +288,7 @@
                     </div>
                     <div class="booking-card-body">
                         <img src="{{ !empty($booking->room->room_photos) ? asset($booking->room->room_photos[0]) : 'https://via.placeholder.com/150x100/e9f5e9/333333?text=Room' }}"
-                             alt="{{ $booking->room->typeroom }}" class="booking-card-image">
+                            alt="{{ $booking->room->typeroom }}" class="booking-card-image">
                         <div class="booking-card-details">
                             <h4>{{ $booking->room->typeroom }} Cabin at {{ $booking->cabin->name }}</h4>
                             <p>Lokasi: {{ $booking->cabin->location }}</p>
@@ -320,13 +320,14 @@
                         <a href="{{ route('frontend.booking.show', $booking->id_booking) }}" class="btn btn-detail">
                             Lihat Detail
                         </a>
+                        {{-- PERBAIKAN: Tombol "Tidak Dapat Dibatalkan" hanya muncul jika TIDAK bisa dibatalkan DAN statusnya BUKAN cancelled --}}
                         @if ($booking->canBeCancelled())
                             <form action="{{ route('frontend.booking.cancel', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?');">
                                 @csrf
                                 @method('PATCH')
                                 <button type="submit" class="btn btn-cancel">Batalkan Booking</button>
                             </form>
-                        @else
+                        @elseif ($booking->status !== 'cancelled') {{-- Hanya tampilkan tombol disabled jika tidak bisa dibatalkan DAN BUKAN cancelled --}}
                             <button type="button" class="btn btn-cancel btn-disabled" disabled>Tidak Dapat Dibatalkan</button>
                         @endif
                     </div>

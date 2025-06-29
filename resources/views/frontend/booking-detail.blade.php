@@ -202,6 +202,28 @@
         border-color: #c3e6cb;
     }
 
+    .qr-code-section {
+        text-align: center;
+        margin-top: 30px;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        border: 1px dashed #ccc;
+    }
+    .qr-code-section img {
+        display: block;
+        margin: 0 auto 15px auto;
+        border: 5px solid #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: 4px;
+    }
+    .qr-code-section p {
+        font-size: 1.1em;
+        color: #333;
+        font-weight: bold;
+    }
+
+
     @media (max-width: 768px) {
         .detail-item {
             flex-direction: column;
@@ -232,7 +254,7 @@
     <div class="container">
         <nav class="breadcrumb">
             <a href="{{ route('frontend.beranda') }}">Home</a> >
-            <a href="{{ route('frontend.booking.index') }}">My Bookings</a> > {{-- CORRECTED LINE --}}
+            <a href="{{ route('frontend.booking.index') }}">My Bookings</a> >
             <span>Detail Booking #{{ $booking->id_booking }}</span>
         </nav>
 
@@ -287,19 +309,26 @@
                     <strong>Jumlah Tamu:</strong>
                     <span>{{ $booking->total_guests }} orang</span>
                 </div>
+                {{-- Display Transaction ID if booking is confirmed and has a successful payment --}}
+                @if ($booking->status === 'confirmed' && $booking->latestSuccessfulPayment)
+                    <div class="detail-item">
+                        <strong>ID Transaksi Pembayaran:</strong>
+                        <span>{{ $booking->latestSuccessfulPayment->transaction_id ?? 'N/A' }}</span>
+                    </div>
+                @endif
             </div>
 
             <div class="detail-section">
                 <h3>Informasi Kabin & Kamar</h3>
                 <div class="cabin-room-info">
-                    <img src="{{ !empty($booking->room->room_photos) ? asset($booking->room->room_photos[0]) : 'https://via.placeholder.com/180x120/e9f5e9/333333?text=Room' }}"
-                         alt="{{ $booking->room->typeroom }}">
+                    <img src="{{ !empty($booking->room->room_photos) && is_array($booking->room->room_photos) && count($booking->room->room_photos) > 0 ? asset('storage/' . $booking->room->room_photos[0]) : 'https://via.placeholder.com/180x120/e9f5e9/333333?text=Room' }}"
+                             alt="{{ $booking->room->typeroom }}">
                     <div class="cabin-room-details">
-                        <h4>{{ $booking->room->typeroom }} Kabin</h4>
-                        <p>Di: {{ $booking->cabin->name }}</p>
+                        <h4>{{ $booking->cabin->name }}</h4>
+                        <p>Tipe: {{ $booking->room->typeroom }}</p>
                         <p>Lokasi: {{ $booking->cabin->location }}</p>
                         <ul>
-                            <li>Kapasitas: {{ $booking->room->slot_room }} tamu</li>
+                            <li>Kapasitas: {{ $booking->room->max_guests }} tamu</li> {{-- Changed from slot_room to max_guests as per validation --}}
                             <li>Biaya per malam: Rp {{ number_format($booking->room->price, 0, ',', '.') }}</li>
                         </ul>
                     </div>
@@ -337,6 +366,7 @@
                     </div>
                     <div class="detail-item">
                         <strong>Ditolak Oleh:</strong>
+                        {{-- Assuming 'rejectedBy' is a relationship to User model --}}
                         <span>{{ $booking->rejectedBy ? $booking->rejectedBy->name : 'Sistem' }} pada {{ \Carbon\Carbon::parse($booking->rejected_at)->locale('id')->isoFormat('dddd, D MMMM YYYY, HH:mm') }} WIB</span>
                     </div>
                 @endif
@@ -364,39 +394,48 @@
                 <span>{{ $booking->formatted_total_price }}</span>
             </div>
 
-            {{-- Ganti keseluruhan div .action-buttons di booking_detail.blade.php --}}
+            {{-- New section for QR Code --}}
+            @if ($qrCode) {{-- This checks if the QR code data was actually generated and passed --}}
+                <div class="qr-code-section">
+                    <h3>QR Code Booking</h3>
+                    <img src="{{ $qrCode }}" alt="QR Code for Booking #{{ $booking->id_booking }}">
+                    <p>Scan QR code ini untuk melihat detail booking Anda dalam format PDF.</p>
+                </div>
+            @endif
 
-<div class="action-buttons">
-    @if(in_array($booking->status, ['pending', 'challenge']))
-        {{-- Tombol utama untuk melanjutkan pembayaran --}}
-        <a href="{{ route('frontend.payment.show', $booking->id_booking) }}" class="btn btn-primary">Lanjutkan Pembayaran</a>
-        
-        {{-- Tombol sekunder untuk ganti metode pembayaran --}}
-        <form action="{{ route('frontend.payment.change', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mengganti metode pembayaran? Transaksi yang sedang berjalan akan dibatalkan.');">
-            @csrf
-            <button type="submit" class="btn btn-secondary">Ganti Metode Pembayaran</button>
-        </form>
+            <div class="action-buttons">
+                @if(in_array($booking->status, ['pending', 'challenge']))
+                    {{-- Tombol utama untuk melanjutkan pembayaran --}}
+                    <a href="{{ route('frontend.payment.show', $booking->id_booking) }}" class="btn btn-primary">Lanjutkan Pembayaran</a>
 
-        {{-- Tombol untuk membatalkan booking --}}
-        <form action="{{ route('frontend.booking.cancel', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?');">
-            @csrf
-            @method('PATCH')
-            <button type="submit" class="btn btn-danger">Batalkan Booking</button>
-        </form>
+                    {{-- Tombol sekunder untuk ganti metode pembayaran --}}
+                    <form action="{{ route('frontend.payment.change', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mengganti metode pembayaran? Transaksi yang sedang berjalan akan dibatalkan.');">
+                        @csrf
+                        <button type="submit" class="btn btn-secondary">Ganti Metode Pembayaran</button>
+                    </form>
 
-    @elseif($booking->status === 'confirmed')
-        <button type="button" class="btn btn-primary btn-disabled" disabled>Telah Dikonfirmasi</button>
-    @else
-        <a href="{{ route('frontend.booking.index') }}" class="btn btn-secondary">Kembali ke Daftar Booking</a>
-    @endif
-</div>
+                    {{-- Tombol untuk membatalkan booking --}}
+                    <form action="{{ route('frontend.booking.cancel', $booking->id_booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?');">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="btn btn-danger">Batalkan Booking</button>
+                    </form>
+
+                @elseif($booking->status === 'confirmed')
+                    {{-- For confirmed bookings, show a disabled "Confirmed" button or relevant actions --}}
+                    <button type="button" class="btn btn-primary btn-disabled" disabled>Telah Dikonfirmasi</button>
+                    {{-- You might also add a button to download the PDF directly here if desired --}}
+                    {{-- <a href="{{ route('frontend.booking.pdf', $booking->id_booking) }}" class="btn btn-primary" target="_blank">Unduh Konfirmasi PDF</a> --}}
+                @else
+                    <a href="{{ route('frontend.booking.index') }}" class="btn btn-secondary">Kembali ke Daftar Booking</a>
+                @endif
+            </div>
         </div>
     </div>
 </div>
 @endsection
 
 
-{{-- di dalam booking_detail.blade.php --}}
 @push('scripts')
 @if ($booking->status === 'pending' || $booking->status === 'challenge')
 <script>
@@ -415,19 +454,19 @@
                     return response.json();
                 })
                 .then(data => {
-                    // Jika status BUKAN lagi 'pending' atau 'challenge'
-                    if (data.status !== 'pending' && data.status !== 'challenge') {
-                        console.log('Status changed to ' + data.status + '. Reloading page.');
-                        // Hentikan polling
+                    // Check if the booking status is NOT 'pending' or 'challenge' anymore
+                    if (data.booking_status !== 'pending' && data.booking_status !== 'challenge') {
+                        console.log('Status changed to ' + data.booking_status + '. Reloading page.');
+                        // Stop polling
                         clearInterval(pollingInterval);
-                        // Tampilkan pesan sukses dan reload halaman
+                        // Display success message and reload page
                         const pollingDiv = document.getElementById('payment-polling-status');
                         if (pollingDiv) {
                             pollingDiv.classList.remove('alert-info');
                             pollingDiv.classList.add('alert-success');
                             pollingDiv.innerHTML = '<span>Pembayaran berhasil! Memuat ulang halaman...</span>';
                         }
-                        // Reload halaman setelah 2 detik untuk user melihat pesan
+                        // Reload page after 2 seconds to let the user see the message
                         setTimeout(() => {
                             window.location.reload();
                         }, 2000);
@@ -435,15 +474,15 @@
                 })
                 .catch(error => {
                     console.error('Error during polling:', error);
-                    // Anda bisa memutuskan untuk menghentikan polling jika terjadi error
-                    // clearInterval(pollingInterval); 
+                    // You might decide to stop polling if a persistent error occurs
+                    // clearInterval(pollingInterval);
                 });
         }
 
-        // Mulai polling setiap 5 detik (5000 milidetik)
+        // Start polling every 5 seconds (5000 milliseconds)
         pollingInterval = setInterval(pollStatus, 5000);
 
-        // Jalankan polling pertama kali tanpa menunggu 5 detik
+        // Run polling once immediately without waiting 5 seconds
         pollStatus();
     });
 </script>

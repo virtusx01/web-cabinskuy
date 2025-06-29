@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth; // Tambahkan ini jika Anda ingin mendapatkan inisial dari Auth::user()
+use Illuminate\Support\Str; // Tambahkan ini untuk helper string
+use Illuminate\Support\Facades\DB;
 
 class Booking extends Model
 {
@@ -22,19 +25,22 @@ class Booking extends Model
 
     /**
      * Auto-incrementing ID.
+     * Ubah ini menjadi false karena kita akan mengisi manual.
      */
-    public $incrementing = true;
+    public $incrementing = false; // <<< UBAH INI KE FALSE
 
     /**
      * The "type" of the auto-incrementing ID.
+     * Ubah ini menjadi string karena id_booking akan berisi huruf dan angka.
      */
-    protected $keyType = 'int';
+    protected $keyType = 'string'; // <<< UBAH INI KE STRING
 
     /**
      * Atribut yang dapat diisi secara massal.
+     * Pastikan 'id_booking' ada di fillable.
      */
     protected $fillable = [
-        'id_booking',
+        'id_booking', // <<< PASTIKAN INI ADA
         'id_user',
         'id_cabin',
         'id_room',
@@ -76,7 +82,44 @@ class Booking extends Model
         'total_nights'   => 'integer',
     ];
 
+    /**
+     * The "booted" method of the model.
+     * Used to add event listeners when the model is initialized.
+     * Kita akan generate ID di sini.
+     * @return void
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (Booking $booking) {
+            // Pastikan id_booking belum diisi secara manual, agar tidak menimpa jika diisi dari luar
+            if (empty($booking->id_booking)) {
+                // Ambil nama pengguna yang membuat booking
+                // Mengambil dari relasi user() lebih aman jika booking dibuat oleh admin atas nama user lain
+                // Jika booking selalu dibuat oleh Auth::user(), bisa juga pakai Auth::user()->name
+                $userName = $booking->contact_name; // Menggunakan contact_name sebagai sumber nama
+
+                // Generate inisial dari nama
+                $initials = '';
+                foreach (explode(' ', $userName) as $word) {
+                    $initials .= strtoupper(substr($word, 0, 1));
+                }
+                
+                // Jika nama kosong atau tidak menghasilkan inisial, fallback ke CUS
+                if (empty($initials)) {
+                    $initials = 'CUS'; 
+                }
+
+                // Format tanggal dan waktu saat ini
+                $timestamp = Carbon::now()->format('ymdHis'); // TahunBulanTanggalJamMenitDetik
+
+                // Gabungkan untuk membentuk id_booking
+                $booking->id_booking = $initials . $timestamp;
+            }
+        });
+    }
+
     // --- RELATIONSHIPS ---
+    // ... (relasi Anda yang sudah ada tetap sama)
 
     /**
      * Relasi ke model User (pemesan).
@@ -145,6 +188,7 @@ class Booking extends Model
     }
 
     // --- SCOPES ---
+    // ... (scopes Anda yang sudah ada tetap sama)
 
     /**
      * Scope untuk booking yang pending.
@@ -192,6 +236,7 @@ class Booking extends Model
     }
 
     // --- ACCESSORS ---
+    // ... (accessors Anda yang sudah ada tetap sama)
 
     /**
      * Accessor untuk label status yang user-friendly.
@@ -203,7 +248,7 @@ class Booking extends Model
             'confirmed' => 'Dikonfirmasi',
             'rejected'  => 'Ditolak',
             'cancelled' => 'Dibatalkan',
-            'completed' => 'Selesai',
+            'completed' => 'Pembayaran Berhasil',
             'challenge' => 'Verifikasi Fraud',
             'expired'   => 'Pembayaran Kadaluarsa',
             'failed'    => 'Pembayaran Gagal',
@@ -238,11 +283,12 @@ class Booking extends Model
     }
 
     // --- BUSINESS LOGIC METHODS ---
+    // ... (metode bisnis Anda yang sudah ada tetap sama)
 
     /**
      * Cek apakah booking sudah lunas.
      */
-    public function isPaid(): bool
+    public function iscompleted(): bool
     {
         return $this->successfulPayment()->exists();
     }
@@ -250,7 +296,7 @@ class Booking extends Model
     /**
      * Mengambil total jumlah yang telah dibayarkan.
      */
-    public function getPaidAmount(): float
+    public function getcompletedAmount(): float
     {
         return (float) $this->payments()
                              ->where('status', 'completed')
@@ -344,8 +390,8 @@ class Booking extends Model
         }
         
         return $this->update([
-            'status'             => 'cancelled',
-            'cancelled_at'       => now(),
+            'status'            => 'cancelled',
+            'cancelled_at'      => now(),
             'cancellation_reason' => $reason ?? 'Dibatalkan oleh user',
         ]);
     }
@@ -373,10 +419,42 @@ class Booking extends Model
     /**
      * Method untuk menandai booking sebagai completed.
      */
-    public function markAsCompleted(): bool
+    public function markAscompleted(): bool
     {
         return $this->update([
             'status' => 'completed'
         ]);
+    }
+
+    public function confirmBooking($adminId, $notes = null): bool
+    {
+        // Use $this->status and $this->total_price directly as they are model attributes
+        if (!in_array($this->status, ['pending', 'challenge'])) {
+            return false;
+        }
+
+        // Update status booking to confirmed
+        $confirmed = $this->update([
+            'status'        => 'confirmed',
+            'confirmed_at'  => now(),
+            'confirmed_by'  => $adminId,
+            'admin_notes'   => $notes,
+        ]);
+
+        // If confirmation successful, check for a suitable payment
+        if ($confirmed) {
+            $validPayment = $this->payments()
+                ->where('status', '!=', 'completed') // Payments not yet completed
+                ->where('amount', '>=', $this->total_price)
+                ->latest()
+                ->first();
+
+            if ($validPayment) {
+                // If a valid payment is found, update its status to completed
+                $validPayment->update(['status' => 'completed']);
+            }
+        }
+
+        return $confirmed;
     }
 }

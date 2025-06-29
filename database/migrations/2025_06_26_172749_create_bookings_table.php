@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('bookings', function (Blueprint $table) {
-            $table->increments('id_booking');
+            $table->string('id_booking', 25)->primary();
 
             // PERBAIKAN: Menggunakan foreignId untuk cara Laravel yang lebih modern dan ringkas
             // Asumsi tabel 'users' memiliki primary key 'id_user' dengan tipe string.

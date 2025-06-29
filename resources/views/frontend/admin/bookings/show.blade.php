@@ -281,7 +281,7 @@
                             <td>Rp {{ number_format($payment->amount, 0, ',', '.') }}</td>
                             <td>{{ $payment->payment_method }}</td>
                             <td>{{ $payment->transaction_id ?? '-' }}</td>
-                            <td><span class="badge {{ $payment->status == 'completed' ? 'badge-success' : ($payment->status == 'pending' ? 'badge-warning' : 'badge-danger') }}">{{ ucfirst($payment->status) }}</span></td>
+                            <td><span class="badge {{ $payment->status == 'completed' ? 'bg-success' : ($payment->status == 'pending' ? 'bg-warning' : 'bg-danger') }}">{{ ucfirst($payment->status) }}</span></td>
                             <td>{{ \Carbon\Carbon::parse($payment->created_at)->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</td>
                         </tr>
                         @endforeach
@@ -293,21 +293,26 @@
         </div>
 
         <div class="card action-buttons">
-            <h3>Aksi Admin</h3>
-            @if ($booking->status === 'pending')
-                <button class="btn btn-success" onclick="openModal('confirmModal')">Konfirmasi Booking</button>
-                <button class="btn btn-danger" onclick="openModal('rejectModal')">Tolak Booking</button>
-            @endif
-            @if ($booking->status !== 'cancelled' && $booking->status !== 'rejected' && $booking->status !== 'completed')
-                <button class="btn btn-secondary" onclick="openModal('cancelModal')">Batalkan Booking</button>
-            @endif
-            <form action="{{ route('admin.bookings.destroy', $booking->id_booking) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus booking ini secara permanen? Tindakan ini tidak bisa dibatalkan dan akan menghapus semua data terkait pembayaran.');">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-danger">Hapus Permanen</button>
-            </form>
-            <a href="{{ route('admin.bookings.index') }}" class="btn btn-info">Kembali ke Daftar Booking</a>
-        </div>
+    <h3>Aksi Admin</h3>
+    @if ($booking->status === 'pending')
+        <button class="btn btn-success" onclick="openModal('confirmModal')">Konfirmasi Booking</button>
+        <button class="btn btn-danger" onclick="openModal('rejectModal')">Tolak Booking</button>
+    @endif
+    @if ($booking->status !== 'cancelled' && $booking->status !== 'rejected' && $booking->status !== 'completed')
+        <button class="btn btn-secondary" onclick="openModal('cancelModal')">Batalkan Booking</button>
+    @endif
+    
+    {{-- PERBAIKAN: HANYA SUPERADMIN YANG BISA MELIHAT DAN MELAKUKAN AKSI HAPUS PERMANEN --}}
+    @if (Auth::check() && Auth::user()->isSuperAdmin())
+        <form action="{{ route('admin.bookings.destroy', $booking->id_booking) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus booking ini secara permanen? Tindakan ini tidak bisa dibatalkan dan akan menghapus semua data terkait pembayaran.');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-danger">Hapus Permanen</button>
+        </form>
+    @endif
+    
+    <a href="{{ route('admin.bookings.index') }}" class="btn btn-info">Kembali ke Daftar Booking</a>
+</div>
     </div>
 </div>
 
