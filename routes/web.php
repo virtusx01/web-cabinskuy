@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\AdminBookingController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\App; 
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\SuperAdmin\SAController;
@@ -13,7 +13,7 @@ use App\Http\Controllers\CabinController;
 use App\Http\Controllers\CabinRoomController;
 use App\Http\Controllers\UserCabinController;
 use App\Http\Controllers\BookingController;
-use App\Http\Controllers\PrintReportController; 
+use App\Http\Controllers\PrintReportController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentController;
@@ -57,6 +57,17 @@ Route::prefix('api')->group(function () {
         ->name('midtrans.notification'); // Name this whatever you prefer, 'api.midtrans.notification' also works
 });
 
+// Public QR Code Access (NON-AUTHENTICATED)
+// This route allows anyone with the correct token to view a basic booking confirmation.
+// The QR code will link to this route.
+Route::get('/qr-booking/{token}', [BookingController::class, 'showQrCodeAccessPage'])->name('frontend.qrcode.show');
+
+// Public PDF Access (can be accessed via token from QR page)
+// This route can be accessed by authenticated users (via id_booking) or non-authenticated (via qr_access_token)
+// It needs to be outside the 'auth' middleware so the QR code can use it directly.
+Route::get('/booking-pdf/{identifier}', [BookingController::class, 'generateBookingPdf'])->name('frontend.booking.pdf');
+
+
 Route::middleware(['auth','role:customer'])->group(function () {
     Route::get('/profile', [UserController::class, 'showProfile'])->name('profile.user.show');
     Route::get('/profile/edit', [UserController::class, 'editProfile'])->name('profile.user.edit');
@@ -65,6 +76,7 @@ Route::middleware(['auth','role:customer'])->group(function () {
     Route::get('/booking/create/{room:id_room}', [BookingController::class, 'create'])->name('frontend.booking.create');
     Route::post('/booking/store', [BookingController::class, 'store'])->name('frontend.booking.store');
     Route::get('/my-bookings', [BookingController::class, 'index'])->name('frontend.booking.index');
+    // Keep this route as it's for authenticated user's detailed view
     Route::get('/booking/{booking:id_booking}', [BookingController::class, 'show'])->name('frontend.booking.show');
     Route::patch('/booking/{booking:id_booking}/cancel', [BookingController::class, 'cancel'])->name('frontend.booking.cancel');
 
@@ -107,28 +119,16 @@ Route::middleware(['auth', 'role:admin,superadmin'])->prefix('admin')->name('adm
 
 Route::get('lang/{locale}', function ($locale) {
     // Pastikan locale yang diminta didukung (misal: 'en', 'id')
-    if (! in_array($locale, ['en', 'id'])) { 
+    if (! in_array($locale, ['en', 'id'])) {
         abort(400); // Bad Request jika locale tidak valid
     }
 
     // Simpan locale yang dipilih di session
-    Session::put('locale', $locale); 
+    Session::put('locale', $locale);
 
     // Atur locale aplikasi untuk request saat ini
-    App::setLocale($locale); 
+    App::setLocale($locale);
 
     // Redirect kembali ke halaman sebelumnya
-    return redirect()->back(); 
+    return redirect()->back();
 });
-
-
-
-// Public QR Code Access (NON-AUTHENTICATED)
-// This route allows anyone with the correct token to view a basic booking confirmation.
-// The QR code will link to this route.
-Route::get('/qr-booking/{token}', [BookingController::class, 'showQrCodeAccessPage'])->name('frontend.qrcode.show');
-
-// Public PDF Access (can be accessed via token from QR page)
-// This route can be accessed by authenticated users (via id_booking) or non-authenticated (via qr_access_token)
-// It needs to be outside the 'auth' middleware so the QR code can use it directly.
-Route::get('/booking-pdf/{identifier}', [BookingController::class, 'generateBookingPdf'])->name('frontend.booking.pdf');
