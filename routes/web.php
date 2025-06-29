@@ -122,10 +122,8 @@ Route::get('lang/{locale}', function ($locale) {
 });
 
 
-// Public QR Code Access Point
-// This route now simply redirects to the PDF download, fulfilling the "QR code directs to frontend.qrcode.pdf" request.
-Route::get('/qr-booking/{token}', [BookingController::class, 'showQrCodeAccessPage'])->name('frontend.qrcode.show');
-
-// Public PDF Access for Booking Confirmation (via token) AND Authenticated User PDF Access (via id_booking)
-// This route handles both public access (via qr_access_token) and authenticated user access (via id_booking).
-Route::get('/booking-pdf/{identifier}', [BookingController::class, 'generateBookingPdf'])->name('frontend.booking.pdf');
+Route::get('/booking/{booking}/qr-code', [BookingController::class, 'showQRCodePage'])
+    ->name('frontend.booking.qrcode');
+    
+Route::get('/booking/{booking}/qr-code/download', [BookingController::class, 'downloadQRCode'])
+    ->name('frontend.booking.qrcode.download');
