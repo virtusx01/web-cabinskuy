@@ -286,8 +286,8 @@
 
                 <div class="detail-item">
                     <strong>Invoice:</strong>
-                    <span class="booking-status status-{{ $booking->status }}">
-                        {{ $booking->latestPayment }}
+                    <span class="">
+                        {{ $booking->successfulPayment }}
                     </span>
                 </div>
                 @if ($booking->status === 'pending' || $booking->status === 'challenge')
