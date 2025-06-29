@@ -288,48 +288,45 @@ class BookingController extends Controller
      * Menampilkan detail booking
      */
     public function show(Booking $booking)
-    {
-        try {
-            // Pastikan pengguna terautentikasi memiliki akses ke booking ini
-            if ($booking->id_user !== (Auth::user()->id_user ?? null)) {
-                abort(403, 'Anda tidak memiliki akses untuk melihat booking ini.');
-            }
+{
+    try {
+        if ($booking->id_user !== Auth::user()->id_user) {
+            abort(403, 'Anda tidak memiliki akses untuk melihat booking ini.');
+        }
 
-            // Eager load relasi yang diperlukan
-            $booking->load(['cabin', 'room', 'user', 'payments', 'latestSuccessfulPayment']);
+        $booking->load(['cabin', 'room', 'user', 'payments']);
 
-            $qrCode = null;
+        $qrCode = null;
 
-            // QR Code hanya dibuat jika booking sudah confirmed dan ada qr_access_token
-            // qr_access_token seharusnya hanya dihasilkan saat status 'confirmed'
-            if ($booking->status === 'confirmed' && $booking->qr_access_token) {
-                $options = new QROptions([
-                    'outputType'    => QRCode::OUTPUT_IMAGE_PNG,
-                    'eccLevel'      => QRCode::ECC_L,
-                    'scale'         => 5,
-                    'imageBase64'   => true,
-                ]);
-
-                $qr = new QRCode($options);
-
-                // URL untuk QR Code sekarang menunjuk ke rute publik baru
-                $qrContent = route('frontend.qrcode.show', ['token' => $booking->qr_access_token]);
-
-                $qrCode = $qr->render($qrContent);
-            }
-
-            return view('frontend.booking-detail', [
-                'booking' => $booking,
-                'title'   => 'Detail Booking #' . $booking->id_booking,
-                'qrCode'  => $qrCode,
+        // QRCode hanya dibuat jika booking sudah confirmed dan ada pembayaran berhasil
+        if ($booking->status === 'confirmed' && $booking->successfulPayment()->exists()) {
+            $options = new QROptions([
+                'outputType'    => QRCode::OUTPUT_IMAGE_PNG,
+                'eccLevel'      => QRCode::ECC_L,
+                'scale'         => 5,
+                'imageBase64'   => true,
             ]);
 
-        } catch (\Exception $e) {
-            Log::error('Error in show booking for authenticated user: ' . $e->getMessage(), ['exception' => $e, 'booking_id' => $booking->id_booking ?? 'N/A']);
-            return redirect()->route('frontend.beranda')
-                ->withErrors(['error' => 'Terjadi kesalahan saat memuat detail booking.']);
+            $qr = new QRCode($options);
+
+            // URL tujuan scan QR Code (halaman detail booking)
+            $qrContent = route('frontend.booking.show', ['booking' => $booking->id_booking]);
+
+            $qrCode = $qr->render($qrContent);
         }
+
+        return view('frontend.booking-detail', [
+            'booking' => $booking,
+            'title'   => 'Detail Booking #' . $booking->id_booking,
+            'qrCode'  => $qrCode,
+        ]);
+
+    } catch (\Exception $e) {
+        Log::error('Error in show booking: ' . $e->getMessage(), ['exception' => $e]);
+        return redirect()->route('frontend.beranda')
+            ->withErrors(['error' => 'Terjadi kesalahan saat memuat detail booking.']);
     }
+}
 
 
     /**
