@@ -14,8 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
-// PERBAIKI INI: Nama kelas yang benar dengan namespace lengkapnya
-use chillerlan\QRCode\Output\QRImage; 
+use chillerlan\QRCode\Output\QRImage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 
@@ -25,7 +24,6 @@ class BookingController extends Controller
      * Langkah 1: Menerima permintaan booking & menyimpan ke session jika tamu.
      * Route ini akan di-pointing dari form di halaman detail.
      */
-
     public function startBooking(Request $request)
     {
         try {
@@ -203,7 +201,7 @@ class BookingController extends Controller
 
             // Jika jumlah unit yang sudah dibooking sudah memenuhi kuota slot_room, tolak booking.
             if ($bookedUnitsCount >= $room->slot_room) {
-                     return redirect()->back()
+                    return redirect()->back()
                         ->withErrors(['error' => 'Maaf, kamar ini sudah tidak tersedia pada tanggal yang dipilih. Silakan pilih tanggal atau kamar lain.'])
                         ->withInput();
             }
@@ -288,46 +286,49 @@ class BookingController extends Controller
      * Menampilkan detail booking
      */
     public function show(Booking $booking)
-{
-    try {
-        if ($booking->id_user !== Auth::user()->id_user) {
-            abort(403, 'Anda tidak memiliki akses untuk melihat booking ini.');
-        }
+    {
+        try {
+            if ($booking->id_user !== Auth::user()->id_user) {
+                abort(403, 'Anda tidak memiliki akses untuk melihat booking ini.');
+            }
 
-        $booking->load(['cabin', 'room', 'user', 'payments']);
+            // FIX: Ensure 'latestSuccessfulPayment' is eager loaded if it's a custom relationship
+            // If latestSuccessfulPayment is a method on the Booking model, make sure it's defined correctly to return a single payment.
+            // If it's an accessor, it will be available as soon as 'payments' is loaded.
+            // However, it's safer to explicitly load it if it's a relation.
+            $booking->load(['cabin', 'room', 'user', 'payments', 'latestSuccessfulPayment']);
 
-        $qrCode = null;
+            $qrCode = null;
 
-        // QRCode hanya dibuat jika booking sudah confirmed dan ada pembayaran berhasil
-        if ($booking->status === 'confirmed' && $booking->successfulPayment()->exists()) {
-            $options = new QROptions([
-                'outputType'    => QRCode::OUTPUT_IMAGE_PNG,
-                'eccLevel'      => QRCode::ECC_L,
-                'scale'         => 5,
-                'imageBase64'   => true,
+            // QRCode hanya dibuat jika booking sudah confirmed dan ada pembayaran berhasil
+            if ($booking->status === 'confirmed' && $booking->successfulPayment()->exists()) {
+                $options = new QROptions([
+                    'outputType'    => QRCode::OUTPUT_IMAGE_PNG,
+                    'eccLevel'      => QRCode::ECC_L,
+                    'scale'         => 5,
+                    'imageBase64'   => true,
+                ]);
+
+                $qr = new QRCode($options);
+
+                // URL tujuan scan QR Code (halaman detail booking)
+                $qrContent = route('frontend.booking.show', ['booking' => $booking->id_booking]);
+
+                $qrCode = $qr->render($qrContent);
+            }
+
+            return view('frontend.booking-detail', [
+                'booking' => $booking,
+                'title'   => 'Detail Booking #' . $booking->id_booking,
+                'qrCode'  => $qrCode,
             ]);
 
-            $qr = new QRCode($options);
-
-            // URL tujuan scan QR Code (halaman detail booking)
-            $qrContent = route('frontend.booking.show', ['booking' => $booking->id_booking]);
-
-            $qrCode = $qr->render($qrContent);
+        } catch (\Exception $e) {
+            Log::error('Error in show booking: ' . $e->getMessage(), ['exception' => $e]);
+            return redirect()->route('frontend.beranda')
+                ->withErrors(['error' => 'Terjadi kesalahan saat memuat detail booking.']);
         }
-
-        return view('frontend.booking-detail', [
-            'booking' => $booking,
-            'title'   => 'Detail Booking #' . $booking->id_booking,
-            'qrCode'  => $qrCode,
-        ]);
-
-    } catch (\Exception $e) {
-        Log::error('Error in show booking: ' . $e->getMessage(), ['exception' => $e]);
-        return redirect()->route('frontend.beranda')
-            ->withErrors(['error' => 'Terjadi kesalahan saat memuat detail booking.']);
     }
-}
-
 
     /**
      * Membatalkan booking (hanya untuk status pending, pending, challenge)
@@ -408,7 +409,7 @@ class BookingController extends Controller
             'status_label' => $booking->status_label,
         ]);
     }
-    
+
     public function showQrCodeAccessPage(string $token)
     {
         try {
@@ -453,8 +454,8 @@ class BookingController extends Controller
                 // If authenticated, ensure they own the booking
                 if (Auth::check()) {
                     $booking = Booking::where('id_booking', $identifier)
-                                      ->where('id_user', Auth::user()->id_user)
-                                      ->first();
+                                    ->where('id_user', Auth::user()->id_user)
+                                    ->first();
                 }
             }
 
@@ -485,7 +486,4 @@ class BookingController extends Controller
             abort(500, 'Terjadi kesalahan saat membuat dokumen PDF booking.');
         }
     }
-    
-
-    
 }
