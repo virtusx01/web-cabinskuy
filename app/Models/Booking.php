@@ -179,6 +179,19 @@ class Booking extends Model
                     ->latest();
     }
 
+        // In your App\Models\Booking model
+    public function latestSuccessfulPayment()
+    {
+        return $this->hasOne(Payment::class) // Assuming you have a Payment model
+                    ->where('status', 'success') // Or whatever indicates a successful payment
+                    ->latestOfMany(); // For Laravel 8+ to get the latest single record
+    }
+        // In your App\Models\Booking model
+    public function getLatestSuccessfulPaymentAttribute()
+    {
+        return $this->payments()->where('status', 'success')->latest()->first();
+    }
+
     /**
      * Relasi ke Payment yang berhasil.
      */
