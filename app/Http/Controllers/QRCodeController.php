@@ -1,0 +1,313 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Booking;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use chillerlan\QRCode\QRCode; // Needed if you generate QR images here
+use chillerlan\QRCode\QROptions; // Needed if you generate QR images here
+
+class QRCodeController extends Controller
+{
+    /**
+     * Generate QR validation token for confirmed bookings
+     */
+    public function generateQRToken(Booking $booking)
+    {
+        try {
+            // Ensure booking is confirmed and has a successful payment
+            if ($booking->status !== 'confirmed' || !$booking->successfulPayment()->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'QR Code can only be generated for confirmed and paid bookings.'
+                ], 400);
+            }
+
+            // Check if a valid token already exists
+            if (!empty($booking->qr_validation_token)) {
+                return response()->json([
+                    'success' => true,
+                    'token' => $booking->qr_validation_token,
+                    'qr_url' => route('qr.validate', ['token' => $booking->qr_validation_token])
+                ]);
+            }
+
+            // Generate a unique token
+            $token = $this->generateUniqueToken();
+
+            // Update booking with the new token
+            $booking->update([
+                'qr_validation_token' => $token
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'token' => $token,
+                'qr_url' => route('qr.validate', ['token' => $token])
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error generating QR token: ' . $e->getMessage(), ['booking_id' => $booking->id_booking]);
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while generating the QR token.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Validate QR Code and display the detail page
+     */
+    public function validateQRCode($token)
+    {
+        try {
+            // Find booking by token
+            $booking = Booking::with(['cabin', 'room', 'user', 'latestPayment'])
+                ->where('qr_validation_token', $token)
+                ->first();
+
+            if (!$booking) {
+                return $this->showValidationPage([
+                    'status' => 'invalid',
+                    'title' => 'Invalid QR Code',
+                    'message' => 'The QR Code you scanned is invalid or no longer valid.',
+                    'booking' => null
+                ]);
+            }
+
+            // Additional validation: ensure booking is still confirmed
+            if ($booking->status !== 'confirmed') {
+                return $this->showValidationPage([
+                    'status' => 'unverified',
+                    'title' => 'Booking Not Confirmed',
+                    'message' => 'This booking has not been confirmed or its status has changed.',
+                    'booking' => $booking
+                ]);
+            }
+
+            // Payment validation
+            $latestPayment = $booking->latestPayment;
+            if (!$latestPayment || $latestPayment->status !== 'settlement') { // Assuming 'settlement' means successful payment
+                return $this->showValidationPage([
+                    'status' => 'unverified',
+                    'title' => 'Payment Not Cleared',
+                    'message' => 'Payment for this booking has not been cleared or confirmed.',
+                    'booking' => $booking
+                ]);
+            }
+
+            // Check-in date validation (optional - can be adjusted)
+            $checkInDate = \Carbon\Carbon::parse($booking->check_in_date);
+            $today = \Carbon\Carbon::today();
+
+            // For example, QR Code is valid from 1 day before check-in until check-out
+            if ($today->lt($checkInDate->subDay()) || $today->gt(\Carbon\Carbon::parse($booking->check_out_date))) {
+                return $this->showValidationPage([
+                    'status' => 'unverified',
+                    'title' => 'QR Code Not Yet / No Longer Valid',
+                    'message' => 'This QR Code is only valid from 1 day before check-in until the check-out date.',
+                    'booking' => $booking
+                ]);
+            }
+
+            // All validations passed
+            return $this->showValidationPage([
+                'status' => 'verified',
+                'title' => 'Booking Verified',
+                'message' => 'This booking has been verified by the system and payment is complete.',
+                'booking' => $booking
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error validating QR code: ' . $e->getMessage(), ['token' => $token]);
+
+            return $this->showValidationPage([
+                'status' => 'error',
+                'title' => 'An Error Occurred',
+                'message' => 'An error occurred while validating the QR Code. Please try again or contact customer service.',
+                'booking' => null
+            ]);
+        }
+    }
+
+    /**
+     * API endpoint for QR Code validation (for mobile app or AJAX)
+     */
+    public function validateQRCodeAPI($token)
+    {
+        try {
+            $booking = Booking::with(['cabin', 'room', 'latestPayment'])
+                ->where('qr_validation_token', $token)
+                ->first();
+
+            if (!$booking) {
+                return response()->json([
+                    'valid' => false,
+                    'status' => 'invalid',
+                    'message' => 'QR Code is invalid or no longer valid.'
+                ], 404);
+            }
+
+            // Validate booking status
+            if ($booking->status !== 'confirmed') {
+                return response()->json([
+                    'valid' => false,
+                    'status' => 'unverified',
+                    'message' => 'Booking not confirmed.',
+                    'booking_status' => $booking->status
+                ], 400);
+            }
+
+            // Payment validation
+            $latestPayment = $booking->latestPayment;
+            if (!$latestPayment || $latestPayment->status !== 'settlement') {
+                return response()->json([
+                    'valid' => false,
+                    'status' => 'unverified',
+                    'message' => 'Payment not cleared.',
+                    'payment_status' => $latestPayment->status ?? 'no_payment'
+                ], 400);
+            }
+
+            // Date validation
+            $checkInDate = \Carbon\Carbon::parse($booking->check_in_date);
+            $today = \Carbon\Carbon::today();
+
+            if ($today->lt($checkInDate->subDay()) || $today->gt(\Carbon\Carbon::parse($booking->check_out_date))) {
+                return response()->json([
+                    'valid' => false,
+                    'status' => 'expired',
+                    'message' => 'QR Code is no longer valid for this date.',
+                    'valid_from' => $checkInDate->subDay()->toDateString(),
+                    'valid_until' => $booking->check_out_date
+                ], 400);
+            }
+
+            // Return verified booking data
+            return response()->json([
+                'valid' => true,
+                'status' => 'verified',
+                'message' => 'Booking verified.',
+                'data' => [
+                    'id_booking' => $booking->id_booking,
+                    'contact_name' => $booking->contact_name,
+                    'cabin_name' => $booking->cabin->cabin_name ?? 'N/A',
+                    'room_name' => $booking->room->room_name ?? 'N/A',
+                    'total_guests' => $booking->total_guests,
+                    'check_in_date' => $booking->check_in_date,
+                    'check_out_date' => $booking->check_out_date,
+                    'total_nights' => $booking->total_nights,
+                    'total_price' => $booking->total_price,
+                    'booking_status' => $booking->status_label,
+                    'payment_status' => $latestPayment->status_label ?? 'N/A'
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in QR validation API: ' . $e->getMessage(), ['token' => $token]);
+
+            return response()->json([
+                'valid' => false,
+                'status' => 'error',
+                'message' => 'An error occurred during validation.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Invalidate QR token (e.g., when a booking is cancelled)
+     */
+    public function invalidateQRToken(Booking $booking)
+    {
+        try {
+            $booking->update([
+                'qr_validation_token' => null
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'QR Token invalidated successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error invalidating QR token: ' . $e->getMessage(), ['booking_id' => $booking->id_booking]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to invalidate QR token.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Display the QR Code validation page
+     */
+    private function showValidationPage($data)
+    {
+        return view('frontend.qr-validation', $data);
+    }
+
+    /**
+     * Generate a unique token for the QR Code
+     */
+    private function generateUniqueToken()
+    {
+        do {
+            // Generate token with format: QR + timestamp + random string
+            $token = 'QR' . time() . Str::random(16);
+        } while (Booking::where('qr_validation_token', $token)->exists());
+
+        return $token;
+    }
+
+    /**
+     * Get QR Code URL for booking (used in BookingController)
+     * This method is now responsible for generating the token if it doesn't exist
+     * and returning the URL for that token.
+     */
+    public static function getQRCodeUrl(Booking $booking)
+    {
+        if ($booking->status !== 'confirmed' || !$booking->successfulPayment()->exists()) {
+            return null;
+        }
+
+        // Generate token if it doesn't exist
+        if (empty($booking->qr_validation_token)) {
+            $token = (new self())->generateUniqueToken(); // Instantiate to call non-static method
+            $booking->update(['qr_validation_token' => $token]);
+        }
+
+        return route('qr.validate', ['token' => $booking->qr_validation_token]);
+    }
+
+    /**
+     * Bulk invalidate expired QR tokens (for cron job)
+     */
+    public function cleanupExpiredTokens()
+    {
+        try {
+            // Invalidate token for bookings that checked out > 7 days ago
+            $expiredDate = \Carbon\Carbon::now()->subDays(7)->toDateString();
+
+            $affected = Booking::where('check_out_date', '<', $expiredDate)
+                ->whereNotNull('qr_validation_token')
+                ->update(['qr_validation_token' => null]);
+
+            Log::info("QR Token cleanup: {$affected} expired tokens invalidated.");
+
+            return response()->json([
+                'success' => true,
+                'message' => "{$affected} expired tokens cleaned up."
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in QR token cleanup: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error during cleanup.'
+            ], 500);
+        }
+    }
+}
