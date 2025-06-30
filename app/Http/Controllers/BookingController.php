@@ -209,8 +209,11 @@ class BookingController extends Controller
             }
 
             $expectedTotalprice = $room->price * $totalNights;
-            if (abs($validated['total_price'] - $expectedTotalprice) > 0.01) { // Toleransi error presisi float
-                Log::warning("Price mismatch for booking. Expected: {$expectedTotalprice}, Received: {$validated['total_price']}");
+            $taxRate = 0.05; // 5% tax
+            $taxAmount = $expectedTotalprice * $taxRate;
+            $finalTotalPrice = $expectedTotalprice + $taxAmount;
+            if (abs($validated['total_price'] - $finalTotalPrice) > 0.01) { // Toleransi error presisi float
+                Log::warning("Price mismatch for booking. Expected: {$finalTotalPrice}, Received: {$validated['total_price']}");
                 return redirect()->back()
                     ->withErrors(['error' => 'Terjadi kesalahan dalam perhitungan harga. Harga yang benar: Rp ' . number_format($expectedTotalprice, 0, ',', '.')])
                     ->withInput();
@@ -229,7 +232,7 @@ class BookingController extends Controller
                                              // Untuk sementara, saya biarkan 1 unit per booking jika slot_room adalah jumlah unit fisik.
                 'total_guests'   => $validated['total_guests'],
                 'total_nights'   => $totalNights,
-                'total_price'    => $expectedTotalprice, // Gunakan harga dari server untuk konsistensi
+                'total_price'    => $finalTotalPrice, // Gunakan harga dari server untuk konsistensi
                 'contact_name'   => $validated['contact_name'],
                 'contact_phone'  => $validated['contact_phone'] ?? null,
                 'contact_email'  => $validated['contact_email'],

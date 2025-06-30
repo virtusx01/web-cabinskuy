@@ -165,7 +165,7 @@
 
     /* Webkit (Chrome, Safari, Edge) scrollbar styles */
     .actions-container::-webkit-scrollbar {
-        height: 8px; /* Tinggi scrollbar horizontal */
+        height: 10px; /* Tinggi scrollbar horizontal */
     }
     .actions-container::-webkit-scrollbar-track {
         background: #f1f1f1;
@@ -181,7 +181,7 @@
 
     .actions-container .action-card {
         flex: 0 0 auto; /* Penting: mencegah card menyusut dan memungkinkan scroll */
-        width: 280px; /* Lebar tetap untuk setiap card aksi */
+        width: 300px; /* Lebar tetap untuk setiap card aksi */
         display: flex;
         align-items: center;
         gap: 15px;

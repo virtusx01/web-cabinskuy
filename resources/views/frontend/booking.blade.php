@@ -357,7 +357,7 @@
 
                 <div class="summary-room-info">
                     <img src="{{ !empty($roomPhotos) ? asset('storage/' . str_replace('\\', '/', $roomPhotos[0])) : $roomDefaultPlaceholder }}"
-                         alt="{{ $room->typeroom }}">
+                            alt="{{ $room->typeroom }}">
                     <div class="summary-room-details">
                         <h4>{{ $room->typeroom }} Kabin</h4>
                         <p>{{ $cabin->name }}</p>
@@ -391,8 +391,8 @@
                         <span id="subtotal">Rp 0</span>
                     </div>
                     <div class="price-row">
-                        <span>Pajak & Biaya Layanan</span>
-                        <span>Rp 0</span> {{-- Adjust if you have actual tax/service fees --}}
+                        <span>Pajak (5%)</span>
+                        <span id="tax_amount">Rp 0</span>
                     </div>
                     <div class="price-row total">
                         <span>Total Pembayaran</span>
@@ -418,10 +418,13 @@
     const summaryGuests = document.getElementById('summary-guests');
     const numNightsSpan = document.getElementById('num_nights');
     const subtotalSpan = document.getElementById('subtotal');
+    const taxAmountSpan = document.getElementById('tax_amount'); // New span for tax
     const totalPriceSpan = document.getElementById('total_price');
     const totalPriceInput = document.getElementById('total_price_input');
     const totalNightsInput = document.getElementById('total_nights_input');
     const confirmBtn = document.getElementById('confirm-btn');
+
+    const taxRate = 0.05; // 5% tax rate
 
     function calculatePrice() {
         const checkinDateStr = checkinInput.value;
@@ -439,8 +442,8 @@
             const nights = Math.round(timeDiff / (1000 * 3600 * 24)); // Use Math.round to avoid potential floating point issues
 
             const subtotal = pricePerNight * nights;
-            const taxAndService = 0; // For now, assumed to be 0 as per your template
-            const totalPrice = subtotal + taxAndService;
+            const taxAmount = subtotal * taxRate; // Calculate 5% tax
+            const totalPrice = subtotal + taxAmount;
 
             // Format dates for display
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -451,6 +454,7 @@
             summaryGuests.textContent = guests;
             numNightsSpan.textContent = nights;
             subtotalSpan.textContent = `Rp ${subtotal.toLocaleString('id-ID')}`;
+            taxAmountSpan.textContent = `Rp ${taxAmount.toLocaleString('id-ID')}`; // Display tax
             totalPriceSpan.textContent = `Rp ${totalPrice.toLocaleString('id-ID')}`;
 
             totalPriceInput.value = totalPrice;
@@ -464,6 +468,7 @@
             summaryGuests.textContent = '-';
             numNightsSpan.textContent = '0';
             subtotalSpan.textContent = 'Rp 0';
+            taxAmountSpan.textContent = 'Rp 0'; // Reset tax display
             totalPriceSpan.textContent = 'Rp 0';
             totalPriceInput.value = '';
             totalNightsInput.value = '';

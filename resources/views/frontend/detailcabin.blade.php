@@ -36,8 +36,7 @@
     }
     .date-filter-group {
         display: flex;
-        /* Increased gap for more spacing */
-        gap: 25px; /* Adjusted from 15px to 25px */
+        gap: 25px;
         align-items: end;
         flex-wrap: wrap;
     }
@@ -104,7 +103,7 @@
         color: #777;
     }
 
-    /* Photo Gallery */
+    /* Enhanced Photo Gallery with Slider */
     .photo-gallery {
         display: grid;
         grid-template-columns: 1fr;
@@ -116,20 +115,69 @@
             grid-template-columns: 2.5fr 1fr;
         }
     }
-    .main-photo {
-        overflow: hidden; /* Ensure zoom effect doesn't break layout */
+
+    /* Main Photo Slider */
+    .main-photo-slider {
+        position: relative;
+        overflow: hidden;
         border-radius: 12px;
         background-color: #e0e0e0;
-    }
-    .main-photo img {
-        width: 100%;
         height: 400px;
-        object-fit: cover;
-        border-radius: 12px;
-        transition: transform 0.5s ease; /* Smooth transition for zoom */
     }
-    .main-photo img:hover {
-        transform: scale(1.05); /* Subtle zoom effect on hover */
+    .main-photo-slider .slider-container {
+        display: flex;
+        transition: transform 0.5s ease;
+        height: 100%;
+    }
+    .main-photo-slider .slide {
+        min-width: 100%;
+        height: 100%;
+    }
+    .main-photo-slider .slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .slider-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0,0,0,0.5);
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 18px;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+    }
+    .slider-nav:hover {
+        background: rgba(0,0,0,0.7);
+    }
+    .slider-nav.prev {
+        left: 15px;
+    }
+    .slider-nav.next {
+        right: 15px;
+    }
+    .slider-indicators {
+        position: absolute;
+        bottom: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+    }
+    .slider-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.5);
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .slider-indicator.active {
+        background: white;
     }
 
     .thumbnail-grid {
@@ -177,7 +225,7 @@
         border: 0;
     }
 
-    /* Room Selection */
+    /* Enhanced Room Selection with Image Slider */
     .room-card {
         display: flex;
         flex-direction: column;
@@ -188,10 +236,10 @@
         border-radius: 12px;
         margin-bottom: 15px;
         align-items: flex-start;
-        transition: box-shadow 0.3s ease; /* Added transition for room card */
+        transition: box-shadow 0.3s ease;
     }
     .room-card:hover {
-        box-shadow: 0 6px 20px rgba(0,0,0,0.08); /* Enhance shadow on hover */
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
     }
 
     @media (min-width: 768px) {
@@ -200,23 +248,73 @@
             align-items: center;
         }
     }
+
+    /* Room Photo Slider */
     .room-card-photo {
         width: 100%;
         height: 200px;
         flex-shrink: 0;
         margin-bottom: 15px;
-        overflow: hidden; /* Ensure zoom effect doesn't break layout */
-        border-radius: 8px; /* Apply border-radius here */
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
     }
-    .room-card-photo img {
+    .room-photo-slider {
+        display: flex;
+        transition: transform 0.5s ease;
+        height: 100%;
+    }
+    .room-photo-slide {
+        min-width: 100%;
+        height: 100%;
+    }
+    .room-photo-slide img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        border-radius: 8px; /* Apply border-radius here */
-        transition: transform 0.5s ease; /* Smooth transition for zoom */
     }
-    .room-card-photo img:hover {
-        transform: scale(1.05); /* Subtle zoom effect on hover */
+    .room-slider-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0,0,0,0.5);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+        z-index: 2;
+    }
+    .room-slider-nav:hover {
+        background: rgba(0,0,0,0.7);
+    }
+    .room-slider-nav.prev {
+        left: 10px;
+    }
+    .room-slider-nav.next {
+        right: 10px;
+    }
+    .room-photo-indicators {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 6px;
+        z-index: 2;
+    }
+    .room-photo-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.5);
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .room-photo-indicator.active {
+        background: white;
     }
 
     @media (min-width: 768px) {
@@ -336,6 +434,14 @@
     .availability-info i {
         font-size: 1.1em;
     }
+
+    /* Hide slider controls when only one image */
+    .single-image .slider-nav,
+    .single-image .slider-indicators,
+    .single-image .room-slider-nav,
+    .single-image .room-photo-indicators {
+        display: none;
+    }
 </style>
 @endpush
 
@@ -351,7 +457,7 @@
         <div class="detail-header">
             <div class="detail-header-info">
                 <h1>{{ $cabin->name }}</h1>
-                <p>📍 {{ $cabin->location }}</p>
+                <p>📍 {{ $cabin->location_address }}</p>
             </div>
             @if($cabin->rooms->isNotEmpty())
             <div class="detail-header-price">
@@ -380,13 +486,37 @@
         @endphp
 
         <section class="photo-gallery">
-            <div class="main-photo">
-                <img id="main-photo" src="{{ !empty($cabinPhotos) ? asset('storage/' . str_replace('\\', '/', $cabinPhotos[0])) : $defaultPlaceholder }}" alt="Main Cabin View">
+            <div class="main-photo-slider {{ count($cabinPhotos) <= 1 ? 'single-image' : '' }}">
+                <div class="slider-container" id="main-slider-container">
+                    @if(!empty($cabinPhotos))
+                        @foreach($cabinPhotos as $photo)
+                            <div class="slide">
+                                <img src="{{ asset('storage/' . str_replace('\\', '/', $photo)) }}" alt="Cabin Photo {{ $loop->iteration }}">
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="slide">
+                            <img src="{{ $defaultPlaceholder }}" alt="No Photo Available">
+                        </div>
+                    @endif
+                </div>
+                
+                @if(count($cabinPhotos) > 1)
+                    <button class="slider-nav prev" onclick="changeMainSlide(-1)">❮</button>
+                    <button class="slider-nav next" onclick="changeMainSlide(1)">❯</button>
+                    
+                    <div class="slider-indicators" id="main-indicators">
+                        @foreach($cabinPhotos as $index => $photo)
+                            <div class="slider-indicator {{ $index === 0 ? 'active' : '' }}" onclick="goToMainSlide({{ $index }})"></div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
+            
             <div class="thumbnail-grid" id="thumbnail-grid">
                 @if(!empty($cabinPhotos))
                     @foreach($cabinPhotos as $photo)
-                        <img src="{{ asset('storage/' . str_replace('\\', '/', $photo)) }}" alt="Thumbnail {{ $loop->iteration }}" onclick="changePhoto(this)">
+                        <img src="{{ asset('storage/' . str_replace('\\', '/', $photo)) }}" alt="Thumbnail {{ $loop->iteration }}" onclick="goToMainSlide({{ $loop->index }})">
                     @endforeach
                 @else
                     <img src="{{ $defaultPlaceholder }}" alt="No Photo" class="thumbnail active-thumbnail">
@@ -431,8 +561,31 @@
                     $roomDefaultPlaceholder = 'https://via.placeholder.com/180x140/e9f5e9/333333?text=Room';
                 @endphp
                 <div class="room-card" data-room-id="{{ $room->id_room }}">
-                    <div class="room-card-photo">
-                        <img src="{{ !empty($roomPhotos) ? asset('storage/' . str_replace('\\', '/', $roomPhotos[0])) : $roomDefaultPlaceholder }}" alt="{{ $room->typeroom }}">
+                    <div class="room-card-photo {{ count($roomPhotos) <= 1 ? 'single-image' : '' }}">
+                        <div class="room-photo-slider" id="room-slider-{{ $room->id_room }}">
+                            @if(!empty($roomPhotos))
+                                @foreach($roomPhotos as $photo)
+                                    <div class="room-photo-slide">
+                                        <img src="{{ asset('storage/' . str_replace('\\', '/', $photo)) }}" alt="{{ $room->typeroom }} Photo {{ $loop->iteration }}">
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="room-photo-slide">
+                                    <img src="{{ $roomDefaultPlaceholder }}" alt="{{ $room->typeroom }}">
+                                </div>
+                            @endif
+                        </div>
+                        
+                        @if(count($roomPhotos) > 1)
+                            <button class="room-slider-nav prev" onclick="changeRoomSlide({{ $room->id_room }}, -1)">❮</button>
+                            <button class="room-slider-nav next" onclick="changeRoomSlide({{ $room->id_room }}, 1)">❯</button>
+                            
+                            <div class="room-photo-indicators" id="room-indicators-{{ $room->id_room }}">
+                                @foreach($roomPhotos as $index => $photo)
+                                    <div class="room-photo-indicator {{ $index === 0 ? 'active' : '' }}" onclick="goToRoomSlide({{ $room->id_room }}, {{ $index }})"></div>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                     <div class="room-card-details">
                         <h4>{{ $room->typeroom }} Cabin</h4>
@@ -478,8 +631,11 @@
         const globalCheckin = document.getElementById('global_checkin_date');
         const globalCheckout = document.getElementById('global_checkout_date');
         const totalGuests = document.getElementById('total_guests');
-        const mainPhoto = document.getElementById('main-photo');
         const thumbnails = document.querySelectorAll('#thumbnail-grid img');
+
+        // Initialize slider states
+        let mainSlideIndex = 0;
+        const roomSlideIndexes = {};
 
         // Set minimal dates
         const today = new Date();
@@ -507,11 +663,83 @@
         }
         totalGuests.value = initialGuests;
 
-        // Function to change the main photo and highlight the active thumbnail
-        window.changePhoto = function(element) {
-            mainPhoto.src = element.src;
-            thumbnails.forEach(thumb => thumb.classList.remove('active-thumbnail'));
-            element.classList.add('active-thumbnail');
+        // Initialize room slide indexes
+        document.querySelectorAll('.room-card').forEach(roomCard => {
+            const roomId = roomCard.getAttribute('data-room-id');
+            roomSlideIndexes[roomId] = 0;
+        });
+
+        // Main slider functions
+        window.changeMainSlide = function(direction) {
+            const container = document.getElementById('main-slider-container');
+            const slides = container.children;
+            const totalSlides = slides.length;
+            
+            mainSlideIndex += direction;
+            
+            if (mainSlideIndex >= totalSlides) {
+                mainSlideIndex = 0;
+            } else if (mainSlideIndex < 0) {
+                mainSlideIndex = totalSlides - 1;
+            }
+            
+            updateMainSlider();
+        }
+
+        window.goToMainSlide = function(index) {
+            mainSlideIndex = index;
+            updateMainSlider();
+        }
+
+        function updateMainSlider() {
+            const container = document.getElementById('main-slider-container');
+            const indicators = document.querySelectorAll('#main-indicators .slider-indicator');
+            
+            container.style.transform = `translateX(-${mainSlideIndex * 100}%)`;
+            
+            // Update indicators
+            indicators.forEach((indicator, index) => {
+                indicator.classList.toggle('active', index === mainSlideIndex);
+            });
+            
+            // Update thumbnails
+            thumbnails.forEach((thumb, index) => {
+                thumb.classList.toggle('active-thumbnail', index === mainSlideIndex);
+            });
+        }
+
+        // Room slider functions
+        window.changeRoomSlide = function(roomId, direction) {
+            const slider = document.getElementById(`room-slider-${roomId}`);
+            const slides = slider.children;
+            const totalSlides = slides.length;
+            
+            roomSlideIndexes[roomId] += direction;
+            
+            if (roomSlideIndexes[roomId] >= totalSlides) {
+                roomSlideIndexes[roomId] = 0;
+            } else if (roomSlideIndexes[roomId] < 0) {
+                roomSlideIndexes[roomId] = totalSlides - 1;
+            }
+            
+            updateRoomSlider(roomId);
+        }
+
+        window.goToRoomSlide = function(roomId, index) {
+            roomSlideIndexes[roomId] = index;
+            updateRoomSlider(roomId);
+        }
+
+        function updateRoomSlider(roomId) {
+            const slider = document.getElementById(`room-slider-${roomId}`);
+            const indicators = document.querySelectorAll(`#room-indicators-${roomId} .room-photo-indicator`);
+            
+            slider.style.transform = `translateX(-${roomSlideIndexes[roomId] * 100}%)`;
+            
+            // Update indicators
+            indicators.forEach((indicator, index) => {
+                indicator.classList.toggle('active', index === roomSlideIndexes[roomId]);
+            });
         }
 
         // Set the first thumbnail as active on load if available
@@ -522,7 +750,7 @@
         // Update checkout minimal date when checkin changes
         globalCheckin.addEventListener('change', function() {
             const checkinDate = new Date(this.value);
-            checkinDate.setDate(checkinDate.getDate() + 1); // Checkout must be at least one day after check-in
+            checkinDate.setDate(checkinDate.getDate() + 1);
             const minCheckout = checkinDate.toISOString().split('T')[0];
             globalCheckout.setAttribute('min', minCheckout);
             
@@ -531,10 +759,9 @@
             }
             
             updateHiddenFields();
-            checkAllRoomsAvailability(); // Re-check availability when checkin changes
+            checkAllRoomsAvailability();
         });
 
-        // Trigger availability check when check-out or guests change, or on initial load
         globalCheckout.addEventListener('change', function() {
             updateHiddenFields();
             checkAllRoomsAvailability();
@@ -639,6 +866,83 @@
                 bookButton.textContent = 'Error';
             });
         }
+
+        // Auto-slide functionality (optional)
+        let autoSlideInterval;
+        
+        function startAutoSlide() {
+            const cabinPhotos = {{ count($cabinPhotos ?? []) }};
+            if (cabinPhotos > 1) {
+                autoSlideInterval = setInterval(() => {
+                    changeMainSlide(1);
+                }, 5000); // Change slide every 5 seconds
+            }
+        }
+        
+        function stopAutoSlide() {
+            if (autoSlideInterval) {
+                clearInterval(autoSlideInterval);
+            }
+        }
+        
+        // Start auto-slide on page load
+        startAutoSlide();
+        
+        // Pause auto-slide when user interacts with slider
+        document.querySelector('.main-photo-slider')?.addEventListener('mouseenter', stopAutoSlide);
+        document.querySelector('.main-photo-slider')?.addEventListener('mouseleave', startAutoSlide);
+        
+        // Touch/swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        function handleMainSliderTouch() {
+            if (touchEndX < touchStartX - 50) {
+                changeMainSlide(1); // Swipe left - next slide
+            }
+            if (touchEndX > touchStartX + 50) {
+                changeMainSlide(-1); // Swipe right - previous slide
+            }
+        }
+        
+        document.querySelector('.main-photo-slider')?.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        document.querySelector('.main-photo-slider')?.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleMainSliderTouch();
+        });
+        
+        // Room slider touch support
+        document.querySelectorAll('.room-card-photo').forEach(roomPhoto => {
+            const roomId = roomPhoto.closest('.room-card').getAttribute('data-room-id');
+            let roomTouchStartX = 0;
+            let roomTouchEndX = 0;
+            
+            roomPhoto.addEventListener('touchstart', e => {
+                roomTouchStartX = e.changedTouches[0].screenX;
+            });
+            
+            roomPhoto.addEventListener('touchend', e => {
+                roomTouchEndX = e.changedTouches[0].screenX;
+                if (roomTouchEndX < roomTouchStartX - 50) {
+                    changeRoomSlide(roomId, 1);
+                }
+                if (roomTouchEndX > roomTouchStartX + 50) {
+                    changeRoomSlide(roomId, -1);
+                }
+            });
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') {
+                changeMainSlide(-1);
+            } else if (e.key === 'ArrowRight') {
+                changeMainSlide(1);
+            }
+        });
 
         // Initial update and availability check on page load
         updateHiddenFields();

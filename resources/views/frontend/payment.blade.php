@@ -328,12 +328,20 @@
                     $displayLocation = '';
                     if ($cabinRegency !== 'N/A' || $cabinProvince !== 'N/A') {
                         $displayLocation = ($cabinRegency !== 'N/A' ? $cabinRegency : '') .
-                                           ($cabinRegency !== 'N/A' && $cabinProvince !== 'N/A' ? ', ' : '') .
-                                           ($cabinProvince !== 'N/A' ? $cabinProvince : '');
+                                            ($cabinRegency !== 'N/A' && $cabinProvince !== 'N/A' ? ', ' : '') .
+                                            ($cabinProvince !== 'N/A' ? $cabinProvince : '');
                     }
                     if (empty($displayLocation)) {
                         $displayLocation = 'Lokasi Tidak Diketahui'; // Fallback if both are N/A
                     }
+
+                    // Calculate subtotal and tax for display
+                    $roomPrice = $booking->room->price ?? 0;
+                    $totalNights = $booking->total_nights;
+                    $subtotal = $roomPrice * $totalNights;
+                    $taxRate = 0.05; // 5% tax
+                    $taxAmount = round($subtotal * $taxRate); // Round tax amount for display
+                    $finalTotalPrice = $subtotal + $taxAmount; // This should match $booking->total_price
                 @endphp
 
                 <div class="summary-room-info">
@@ -367,16 +375,16 @@
 
                 <div class="price-details">
                     <div class="price-row">
-                        <span>Rp {{ number_format($booking->room->price ?? 0, 0,',','.') }} x {{ $booking->total_nights }} malam</span>
-                        <span>Rp {{ number_format(($booking->room->price ?? 0) * $booking->total_nights, 0,',','.') }}</span>
+                        <span>Rp {{ number_format($roomPrice, 0,',','.') }} x {{ $totalNights }} malam</span>
+                        <span>Rp {{ number_format($subtotal, 0,',','.') }}</span>
                     </div>
                     <div class="price-row">
-                        <span>Pajak & Biaya Layanan</span>
-                        <span>Rp 0</span> {{-- Assuming 0 for now, adjust if you have actual tax/service fees --}}
+                        <span>Pajak (5%)</span>
+                        <span>Rp {{ number_format($taxAmount, 0,',','.') }}</span>
                     </div>
                     <div class="price-row total">
                         <span>Total Pembayaran</span>
-                        <span>Rp {{ number_format($booking->total_price, 0, ',', '.') }}</span>
+                        <span>Rp {{ number_format($finalTotalPrice, 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>
