@@ -284,6 +284,7 @@
     }
     .btn-see-more:hover {
         background-color: var(--dark-green);
+        color: green;
     }
 
     /* How to Book Section */
