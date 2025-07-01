@@ -22,21 +22,29 @@
         font-family: 'Poppins', sans-serif;
         background-color: var(--background-color);
         color: var(--dark-text);
+        line-height: 1.6;
     }
 
     .room-form-container {
-        padding: 2rem 1.5rem;
+        padding: 1.5rem 1rem; /* Adjusted padding for mobile */
         max-width: 1200px;
         margin: auto;
     }
 
     .room-form-header {
         display: flex;
+        flex-direction: column; /* Stack on mobile */
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start; /* Align items to start on mobile */
         margin-bottom: 2rem;
-        flex-wrap: wrap;
         gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+        .room-form-header {
+            flex-direction: row; /* Row on larger screens */
+            align-items: center;
+        }
     }
 
     .room-form-header h1 {
@@ -50,10 +58,15 @@
         color: var(--light-text);
         font-size: 1.2rem;
     }
+    .room-form-header p {
+        font-size: 0.95rem;
+        margin-top: 0.25rem;
+        color: var(--light-text);
+    }
 
     .header-buttons .btn {
         text-decoration: none;
-        padding: 0.6rem 1.2rem;
+        padding: 0.6rem 1rem;
         border-radius: 8px;
         font-weight: 500;
         border: 1px solid var(--primary-green);
@@ -63,6 +76,7 @@
         gap: 0.5rem;
         background-color: var(--white);
         color: var(--primary-green);
+        font-size: 0.9rem;
     }
     .header-buttons .btn:hover {
         background-color: var(--light-green);
@@ -86,27 +100,31 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
     .form-card h2 {
-        font-size: 1.25rem;
+        font-size: 1.5rem;
         font-weight: 600;
         margin-bottom: 1.5rem;
         border-left: 4px solid var(--primary-green);
         padding-left: 1rem;
+        color: var(--dark-text);
     }
     .form-group {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.25rem;
     }
     .form-group label {
         display: block;
         font-weight: 500;
         margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--dark-text);
     }
     .form-control {
         width: 100%;
         padding: 0.75rem 1rem;
         border: 1px solid var(--border-color);
         border-radius: 8px;
-        font-size: 1rem;
+        font-size: 0.9rem;
         transition: border-color 0.3s, box-shadow 0.3s;
+        box-sizing: border-box;
     }
     .form-control:focus {
         outline: none;
@@ -117,9 +135,13 @@
         background-color: #f1f1f1;
         cursor: not-allowed;
     }
+    textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+    }
     
-    /* Styles for current photos and delete functionality */
     .current-photos-section {
+        margin-top: 2rem;
         margin-bottom: 2rem;
         border: 1px solid var(--border-color);
         padding: 1.5rem;
@@ -130,12 +152,13 @@
         font-weight: 600;
         margin-bottom: 1rem;
         display: block;
+        font-size: 1rem;
     }
     .current-photos-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* Adjusted for better visibility */
-        gap: 1rem;
-        padding-bottom: 0.5rem; /* Space for potential scrollbar */
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.75rem;
+        padding-bottom: 0.5rem;
     }
     .current-photo-item {
         position: relative;
@@ -145,18 +168,18 @@
         transition: all 0.2s ease-in-out;
     }
     .current-photo-item.marked-for-delete {
-        opacity: 0.6; /* Reduced opacity */
-        border-color: var(--danger); /* Highlight with danger color */
+        opacity: 0.6;
+        border-color: var(--danger);
     }
     .current-photo-item img {
         display: block;
         width: 100%;
-        height: 100px;
+        height: 90px;
         object-fit: cover;
     }
     .delete-photo-overlay {
         position: absolute;
-        top: 0; /* Changed to top */
+        top: 0;
         left: 0;
         right: 0;
         background: rgba(0,0,0,0.7);
@@ -166,17 +189,19 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transform: translateY(-100%); /* Start hidden above */
+        transform: translateY(-100%);
         transition: transform 0.3s ease-out;
-        height: 100%; /* Cover entire image */
+        height: 100%;
+        opacity: 0; /* Hidden by default */
     }
     .current-photo-item:hover .delete-photo-overlay {
-        transform: translateY(0); /* Slide down on hover */
+        transform: translateY(0);
+        opacity: 1; /* Fade in on hover */
     }
     .delete-photo-overlay label {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         display: flex;
-        flex-direction: column; /* Stack checkbox and text */
+        flex-direction: column;
         align-items: center;
         justify-content: center;
         cursor: pointer;
@@ -184,16 +209,14 @@
         font-weight: 500;
     }
     .delete-photo-overlay input {
-        margin-bottom: 0.3rem; /* Space between checkbox and text */
-        transform: scale(1.2); /* Slightly larger checkbox */
+        margin-bottom: 0.3rem;
+        transform: scale(1.1);
     }
 
-
-    /* Styles for new photo input */
     .file-input-wrapper {
         border: 2px dashed var(--border-color);
         border-radius: 8px;
-        padding: 2rem;
+        padding: 1.5rem;
         text-align: center;
         cursor: pointer;
         transition: border-color 0.3s ease;
@@ -202,11 +225,11 @@
     .file-input-wrapper:hover { border-color: var(--primary-green); }
     .file-input-wrapper input[type="file"] { display: none; }
     .file-input-wrapper .file-input-label svg {
-        width: 40px; height: 40px; margin-bottom: 0.5rem; color: var(--primary-green);
+        width: 30px; height: 30px; margin-bottom: 0.5rem; color: var(--primary-green);
     }
     .file-input-wrapper img.preview-image {
         max-width: 100%;
-        max-height: 150px;
+        max-height: 120px;
         display: block;
         margin: 0 auto 10px;
         border-radius: 4px;
@@ -219,7 +242,6 @@
         background-color: var(--background-color);
     }
 
-    /* Preview card styles - copied from addroom for consistency */
     .preview-card {
         background-color: var(--white);
         border-radius: 12px;
@@ -229,35 +251,40 @@
         top: 20px;
     }
     .preview-card h3 {
-        padding: 1rem 1.5rem; margin: 0; font-size: 1.25rem;
+        padding: 1rem 1.5rem; margin: 0; font-size: 1.1rem;
         background-color: var(--light-green); color: var(--primary-green);
     }
     .preview-gallery {
-        padding: 1rem;
+        padding: 0.75rem;
         background-color: #f0f0f0;
     }
     .main-preview-image {
-        width: 100%; height: 250px; /* Increased height for master photo */
+        width: 100%; height: 200px;
         background-color: var(--border-color);
-        border-radius: 8px; overflow: hidden; margin-bottom: 1rem;
+        border-radius: 8px; overflow: hidden; margin-bottom: 0.75rem;
         display: flex; align-items: center; justify-content: center;
     }
-    .main-preview-image img, .main-preview-image .image-placeholder {
-        width: 100%; height: 100%; object-fit: contain; /* Changed to contain */
+    .main-preview-image img { /* Apply object-fit: cover here */
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* This is the key change */
+    }
+    .main-preview-image .image-placeholder {
+        width: 100%; height: 100%; object-fit: contain;
     }
 
     .image-placeholder {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        color: var(--light-text); font-size: 0.9rem;
+        color: var(--light-text); font-size: 0.85rem;
     }
-    .image-placeholder svg { width: 40px; height: 40px; margin-bottom: 0.5rem; }
+    .image-placeholder svg { width: 35px; height: 35px; margin-bottom: 0.4rem; }
 
     .thumbnail-preview-container {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); /* Slightly larger thumbnails */
-        gap: 0.5rem; min-height: 64px; /* Adjusted height */
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+        gap: 0.4rem; min-height: 54px;
     }
     .thumbnail-item {
-        width: 100%; height: 60px; border-radius: 6px; /* Adjusted height */
+        width: 100%; height: 50px; border-radius: 6px;
         overflow: hidden; cursor: pointer; border: 2px solid transparent;
         transition: border-color 0.3s;
     }
@@ -268,36 +295,56 @@
         width: 100%; height: 100%; object-fit: cover;
     }
 
-    .preview-content { padding: 1.5rem; }
+    .preview-content { padding: 1.25rem; }
     .preview-typeroom {
-        font-size: 1.5rem; font-weight: 600; margin: 0;
+        font-size: 1.3rem; font-weight: 600; margin: 0;
     }
     .preview-price {
-        font-size: 1.25rem; color: var(--primary-green); font-weight: 500; margin: 0.25rem 0 1rem 0;
+        font-size: 1.1rem; color: var(--primary-green); font-weight: 500; margin: 0.25rem 0 0.8rem 0;
     }
     .preview-description {
-        font-size: 0.95rem; color: var(--light-text); margin-bottom: 1.5rem; max-height: 120px; overflow-y: auto;
+        font-size: 0.85rem; color: var(--light-text); margin-bottom: 1.25rem; max-height: 90px; overflow-y: auto;
     }
     .preview-status {
-        display: inline-block; padding: 0.4rem 0.8rem; border-radius: 20px;
-        font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+        display: inline-block; padding: 0.3rem 0.7rem; border-radius: 20px;
+        font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
     }
     .status-available { background-color: var(--light-green); color: var(--primary-green); }
     .status-unavailable { background-color: var(--danger-light); color: var(--danger); }
     
     .form-actions {
         display: flex;
+        flex-direction: column;
         gap: 1rem;
-        align-items: center;
+        align-items: stretch;
         margin-top: 2rem;
+    }
+    @media (min-width: 576px) {
+        .form-actions {
+            flex-direction: row;
+            align-items: center;
+        }
     }
     .btn-primary {
         background-color: var(--primary-green); color: var(--white);
         padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: 600; border: none;
         border-radius: 8px; cursor: pointer; transition: background-color 0.3s;
+        flex-grow: 1;
     }
     .btn-primary:hover { background-color: #006a5f; }
-    .btn-cancel { color: var(--light-text); text-decoration: none; font-weight: 500;}
+    .btn-cancel { 
+        color: var(--light-text); text-decoration: none; font-weight: 500;
+        text-align: center;
+        padding: 0.8rem;
+        display: block;
+    }
+    .alert-danger {
+        background-color: var(--danger-light); border-left: 4px solid var(--danger); color: #C53030;
+        padding: 1rem; margin-bottom: 1.5rem; border-radius: 4px;
+        font-size: 0.9rem;
+    }
+    .alert-danger ul { margin: 0; padding-left: 1.2rem; }
+    .alert-danger li { margin-bottom: 0.2rem; }
 </style>
 @endpush
 
@@ -306,7 +353,7 @@
     <div class="room-form-header">
         <div>
             <h1>Edit Ruangan: <span>{{ $room->typeroom }}</span></h1>
-            <p style="color: var(--light-text); margin-top: 0.25rem;">Kabin: <strong>{{ $room->cabin->name ?? 'N/A' }}</strong></p>
+            <p>Kabin: <strong>{{ $room->cabin->name ?? 'N/A' }}</strong></p>
         </div>
         <div class="header-buttons">
             <a href="{{ route('admin.cabins.show', $room->id_cabin) }}" class="btn">
@@ -324,14 +371,15 @@
         $cleanedCurrentPhotos = [];
         foreach ($initialRoomPhotos as $path) {
             if (is_string($path)) {
-                // Ensure path starts with 'images/' and uses forward slashes
+                // Ensure path uses forward slashes and is cleaned
                 $cleanedPath = str_replace(['\\', '"'], ['/', ''], $path);
                 // Remove leading slash if it exists, to prevent double slashes when concatenating with asset('storage/')
                 $cleanedPath = ltrim($cleanedPath, '/');
-                // Ensure it starts with 'images/cabin_rooms/'
+                // Ensure it starts with 'images/cabin_rooms/' for consistency,
+                // this might be adjusted based on your actual storage structure
                 if (!Str::startsWith($cleanedPath, 'images/cabin_rooms/')) {
                     // This case should ideally not happen if paths are stored correctly from upload
-                    // But as a safeguard, try to append it if it's just the filename
+                    // But as a safeguard, try to prepend it if it's just the filename
                     $cleanedPath = 'images/cabin_rooms/' . basename($cleanedPath);
                 }
                 $cleanedCurrentPhotos[] = $cleanedPath;
@@ -361,8 +409,6 @@
                 <div class="form-group">
                     <label for="id_room">ID Ruangan</label>
                     <input type="text" class="form-control" value="{{ $room->id_room }}" disabled>
-                    {{-- Hidden input to ensure id_room is sent with the form if needed for custom logic --}}
-                    {{-- <input type="hidden" name="id_room" value="{{ $room->id_room }}"> --}}
                 </div>
 
                 <div class="form-group">
@@ -420,7 +466,7 @@
                                     <img src="{{ $photoUrl }}" alt="Foto Ruangan">
                                     <div class="delete-photo-overlay">
                                         <label>
-                                            <input type="checkbox" name="delete_photos[]" value="{{ $photoPath }}" class="delete-photo-checkbox">
+                                            <input type="checkbox" name="delete_photos[]" value="{{ $photoPath }}" class="delete-photo-checkbox" {{ in_array($photoPath, old('delete_photos', [])) ? 'checked' : '' }}>
                                             Hapus
                                         </label>
                                     </div>
@@ -428,7 +474,7 @@
                             @endforeach
                         </div>
                     @else
-                        <p style="color: var(--light-text); text-align: center;">Tidak ada foto saat ini untuk ruangan ini.</p>
+                        <p style="color: var(--light-text); text-align: center; font-size: 0.9rem;">Tidak ada foto saat ini untuk ruangan ini.</p>
                     @endif
                 </div>
 
@@ -471,13 +517,17 @@
     </div>
 </div>
 @endsection
-
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Current photo paths passed from Blade, cleaned and ready for use
     const currentPhotoPaths = @json($currentPhotos ?? []); 
     let newPhotoFiles = []; // Files selected via the new photo input
+    // Use a Set for efficient tracking of photos to be deleted
+    let photosToDelete = new Set(
+        Array.from(document.querySelectorAll('.delete-photo-checkbox:checked'))
+             .map(cb => cb.value)
+    );
 
     const elements = {
         typeroomInput: document.getElementById('typeroom'),
@@ -537,14 +587,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const assetBaseUrl = "{{ asset('storage/') }}"; 
 
         // Collect existing photos that are NOT marked for deletion
-        const nonDeletedCurrentPhotos = currentPhotoPaths.filter(path => {
-            const checkbox = document.querySelector(`.delete-photo-checkbox[value="${path}"]`);
-            return !checkbox || !checkbox.checked;
-        });
+        const nonDeletedCurrentPhotos = currentPhotoPaths.filter(path => !photosToDelete.has(path));
 
         // Add non-deleted current photos to the preview array
         nonDeletedCurrentPhotos.forEach(path => {
-            photosForPreview.push(`${assetBaseUrl}${path}`);
+            photosForPreview.push(`${assetBaseUrl}/${path}`);
         });
 
         // Add newly selected files to the preview array
@@ -599,33 +646,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 parentItem.classList.remove('marked-for-delete');
             }
         });
+        photosToDelete.clear(); // Clear the set of photos to delete
         renderPhotoPreview();
     }
     
     // Event listener for delete checkboxes
-    elements.deleteCheckboxes.forEach((checkbox, index) => {
+    elements.deleteCheckboxes.forEach((checkbox) => { // Removed index as it's not directly needed here
         checkbox.addEventListener('change', () => {
-            // Clear new file input and files when a delete checkbox is checked
+            const photoPath = checkbox.value;
+            const parentItem = checkbox.closest('.current-photo-item');
+
+            if (checkbox.checked) {
+                photosToDelete.add(photoPath);
+                if (parentItem) {
+                    parentItem.classList.add('marked-for-delete');
+                }
+            } else {
+                photosToDelete.delete(photoPath);
+                if (parentItem) {
+                    parentItem.classList.remove('marked-for-delete');
+                }
+            }
+
+            // Clear new file input and files when a delete checkbox is changed
             elements.newPhotoInput.value = ''; 
             newPhotoFiles = [];
             elements.newPhotoPreviewImage.src = '';
             elements.newPhotoPreviewImage.style.display = 'none';
             elements.newPhotoInputLabel.style.display = 'block';
 
-            // Update the visual state of the current photo item
-            const parentItem = elements.currentPhotoItems[index];
-            if (parentItem) {
-                parentItem.classList.toggle('marked-for-delete', checkbox.checked);
-            }
             renderPhotoPreview();
         });
 
         // Set initial state for checkboxes based on old input (if a form validation error occurred)
+        // This is handled by PHP now: `{{ in_array($photoPath, old('delete_photos', [])) ? 'checked' : '' }}`
+        // So we only need to apply the class if it's checked on load.
         if (checkbox.checked) {
-             const parentItem = elements.currentPhotoItems[index];
-             if (parentItem) {
+            const parentItem = checkbox.closest('.current-photo-item');
+            if (parentItem) {
                 parentItem.classList.add('marked-for-delete');
-             }
+            }
         }
     });
 

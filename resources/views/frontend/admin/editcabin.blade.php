@@ -15,27 +15,36 @@
         --background-color: #F9FAFB;
         --white: #FFFFFF;
         --danger: #e53e3e;
+        --danger-light: #FEE2E2;
     }
 
     body {
         font-family: 'Poppins', sans-serif;
         background-color: var(--background-color);
         color: var(--dark-text);
+        line-height: 1.6;
     }
 
     .cabin-form-container {
-        padding: 2rem 1.5rem;
+        padding: 1.5rem 1rem; /* Adjust padding for mobile */
         max-width: 1200px;
         margin: auto;
     }
 
     .cabin-form-header {
         display: flex;
+        flex-direction: column; /* Stack on mobile */
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start; /* Align items to start on mobile */
         margin-bottom: 2rem;
-        flex-wrap: wrap;
         gap: 1rem;
+    }
+
+    @media (min-width: 768px) { /* Adjust for tablet and desktop */
+        .cabin-form-header {
+            flex-direction: row; /* Row on larger screens */
+            align-items: center;
+        }
     }
 
     .cabin-form-header h1 {
@@ -44,10 +53,21 @@
         color: var(--primary-green);
         margin: 0;
     }
+    .cabin-form-header p {
+        font-size: 0.95rem; /* Slightly smaller text for description */
+        margin-top: 0.25rem;
+        color: var(--light-text);
+    }
+
+    .header-buttons {
+        display: flex;
+        gap: 0.75rem; /* Closer buttons */
+        flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+    }
 
     .header-buttons .btn {
         text-decoration: none;
-        padding: 0.6rem 1.2rem;
+        padding: 0.6rem 1rem; /* Slightly smaller padding for buttons */
         border-radius: 8px;
         font-weight: 500;
         border: 1px solid var(--primary-green);
@@ -55,6 +75,7 @@
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
+        font-size: 0.9rem; /* Smaller font size for buttons */
     }
 
     .header-buttons .btn-secondary {
@@ -90,28 +111,31 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
     .form-card h2 {
-        font-size: 1.25rem;
+        font-size: 1.5rem; /* Slightly larger heading for form sections */
         font-weight: 600;
         margin-bottom: 1.5rem;
         border-left: 4px solid var(--primary-green);
         padding-left: 1rem;
+        color: var(--dark-text);
     }
     .form-group {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.25rem; /* Slightly reduced margin for tighter spacing */
     }
     .form-group label {
         display: block;
         font-weight: 500;
         margin-bottom: 0.5rem;
         color: var(--dark-text);
+        font-size: 0.9rem; /* Smaller label font size */
     }
     .form-control {
         width: 100%;
         padding: 0.75rem 1rem;
         border: 1px solid var(--border-color);
         border-radius: 8px;
-        font-size: 1rem;
+        font-size: 0.9rem; /* Slightly smaller font size for inputs */
         transition: border-color 0.3s, box-shadow 0.3s;
+        box-sizing: border-box; /* Include padding and border in the element's total width and height */
     }
     .form-control:focus {
         outline: none;
@@ -123,14 +147,14 @@
         cursor: not-allowed;
     }
     textarea.form-control {
-        min-height: 120px;
+        min-height: 100px; /* Reduced min-height for textarea */
         resize: vertical;
     }
 
     .current-photos-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Adjusted for mobile */
+        gap: 0.75rem; /* Smaller gap */
     }
     .current-photo-item {
         position: relative;
@@ -138,38 +162,44 @@
         overflow: hidden;
         border: 1px solid var(--border-color);
         transition: all 0.2s ease-in-out;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between; /* Push actions to bottom */
     }
     .current-photo-item.marked-for-delete {
-        opacity: 0.6; /* Reduced opacity */
-        border-color: var(--danger); /* Highlight with danger color */
+        opacity: 0.6;
+        border-color: var(--danger);
     }
     .current-photo-item img {
         display: block;
         width: 100%;
-        height: 100px;
+        height: 90px; /* Adjusted image height */
         object-fit: cover;
     }
     .photo-actions {
-        font-size: 0.8rem;
-        padding: 0.5rem;
+        font-size: 0.75rem; /* Smaller font size for actions */
+        padding: 0.4rem; /* Smaller padding */
         background-color: #f8f9fa;
         display: flex;
         flex-direction: column;
-        align-items: flex-start; /* Align items to the start */
+        align-items: flex-start;
+        gap: 0.3rem; /* Smaller gap between items */
     }
     .photo-actions label {
         display: flex;
         align-items: center;
         color: var(--danger);
         cursor: pointer;
-        margin-bottom: 0.5rem; /* Space between checkbox and button */
+        margin-bottom: 0; /* No margin bottom */
+        font-size: 0.75rem;
     }
     .photo-actions input[type="checkbox"] {
-        margin-right: 0.5rem;
+        margin-right: 0.4rem; /* Smaller margin */
+        transform: scale(0.9); /* Slightly smaller checkbox */
     }
     .set-main-btn {
-        font-size: 0.8rem;
-        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem; /* Smaller font size */
+        padding: 0.15rem 0.4rem; /* Smaller padding */
         border-radius: 4px;
         border: 1px solid var(--primary-green);
         background: transparent;
@@ -178,6 +208,7 @@
         display: block;
         width: 100%;
         text-align: center;
+        margin-top: 0.3rem; /* Small margin top */
     }
     .set-main-btn:disabled {
         background: var(--light-green);
@@ -188,7 +219,7 @@
     .file-input-wrapper {
         border: 2px dashed var(--border-color);
         border-radius: 8px;
-        padding: 2rem;
+        padding: 1.5rem; /* Adjusted padding */
         text-align: center;
         cursor: pointer;
         transition: border-color 0.3s ease;
@@ -198,9 +229,18 @@
     .file-input-wrapper .file-input-label {
         color: var(--light-text);
         font-weight: 500;
+        font-size: 0.9rem; /* Smaller font size */
     }
     .file-input-wrapper .file-input-label svg {
-        width: 40px; height: 40px; margin-bottom: 0.5rem; color: var(--primary-green);
+        width: 30px; height: 30px; margin-bottom: 0.5rem; color: var(--primary-green); /* Smaller icon */
+    }
+    .file-input-wrapper .preview-image {
+        max-width: 100%;
+        max-height: 120px; /* Adjusted height for preview image */
+        object-fit: contain;
+        display: block;
+        margin: 0 auto 10px;
+        border-radius: 4px;
     }
 
     .preview-card {
@@ -212,23 +252,23 @@
         top: 20px;
     }
     .preview-card h3 {
-        padding: 1rem 1.5rem; margin: 0; font-size: 1.25rem; font-weight: 600;
+        padding: 1rem 1.5rem; margin: 0; font-size: 1.1rem; font-weight: 600; /* Smaller heading */
         background-color: var(--light-green); color: var(--primary-green);
     }
     .preview-gallery {
         background-color: #f0f0f0;
-        padding: 1rem;
+        padding: 0.75rem; /* Smaller padding */
     }
     .main-preview-image {
         width: 100%;
-        height: 200px;
+        height: 180px; /* Adjusted height */
         background-color: #e0e0e0;
         border-radius: 8px;
         overflow: hidden;
-        margin-bottom: 0.5rem;
-        display: flex; /* Added for placeholder centering */
-        align-items: center; /* Added for placeholder centering */
-        justify-content: center; /* Added for placeholder centering */
+        margin-bottom: 0.75rem; /* Smaller margin */
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     .main-preview-image img {
         width: 100%;
@@ -237,19 +277,19 @@
     }
     .image-placeholder {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        width: 100%; height: 100%; color: var(--light-text); font-size: 0.9rem;
+        width: 100%; height: 100%; color: var(--light-text); font-size: 0.85rem; /* Smaller font */
     }
-    .image-placeholder svg { width: 40px; height: 40px; margin-bottom: 0.5rem; }
+    .image-placeholder svg { width: 35px; height: 35px; margin-bottom: 0.4rem; } /* Smaller icon */
 
     #thumbnail-preview-container {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-        gap: 0.5rem;
-        margin-top: 1rem;
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); /* Smaller thumbnails for mobile */
+        gap: 0.4rem; /* Smaller gap */
+        margin-top: 0.75rem; /* Smaller margin */
     }
     .thumbnail-item {
         width: 100%;
-        height: 60px;
+        height: 50px; /* Smaller height */
         border-radius: 6px;
         overflow: hidden;
         cursor: pointer;
@@ -265,34 +305,38 @@
         object-fit: cover;
     }
     
-    .preview-content { padding: 1.5rem; }
+    .preview-content { padding: 1.25rem; } /* Smaller padding */
     .preview-name {
-        font-size: 1.5rem; font-weight: 600; margin-top: 0; margin-bottom: 0.5rem; word-wrap: break-word;
+        font-size: 1.3rem; font-weight: 600; margin-top: 0; margin-bottom: 0.4rem; word-wrap: break-word; /* Smaller font */
     }
     .preview-location {
-        font-weight: 500; color: var(--light-text); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+        font-weight: 500; color: var(--light-text); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem; /* Smaller gap */
+        font-size: 0.9rem; /* Smaller font */
     }
     .preview-description {
-        font-size: 0.95rem; color: var(--light-text); margin-bottom: 1.5rem; max-height: 100px; overflow-y: auto;
+        font-size: 0.85rem; color: var(--light-text); margin-bottom: 1.25rem; max-height: 90px; overflow-y: auto; /* Smaller font and height */
     }
     .preview-status {
-        display: inline-block; padding: 0.4rem 0.8rem; border-radius: 20px;
-        font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+        display: inline-block; padding: 0.3rem 0.7rem; border-radius: 20px;
+        font-size: 0.75rem; font-weight: 600; text-transform: uppercase; /* Smaller font */
     }
     .status-available { background-color: var(--light-green); color: var(--primary-green); }
-    .status-unavailable { background-color: #FEE2E2; color: var(--danger); }
+    .status-unavailable { background-color: var(--danger-light); color: var(--danger); }
     
     .btn-primary {
         width: 100%; background-color: var(--primary-green); color: var(--white);
-        padding: 0.8rem; font-size: 1.1rem; font-weight: 600; border: none;
+        padding: 0.8rem; font-size: 1rem; font-weight: 600; border: none;
         border-radius: 8px; cursor: pointer; transition: background-color 0.3s;
+        margin-top: 1.5rem; /* Added margin-top */
     }
     .btn-primary:hover { background-color: #006a5f; }
     .alert-danger {
-        background-color: #FFF5F5; border-left: 4px solid var(--danger); color: #C53030;
+        background-color: var(--danger-light); border-left: 4px solid var(--danger); color: #C53030;
         padding: 1rem; margin-bottom: 1.5rem; border-radius: 4px;
+        font-size: 0.9rem; /* Smaller font for alerts */
     }
     .alert-danger ul { margin: 0; padding-left: 1.2rem; }
+    .alert-danger li { margin-bottom: 0.2rem; } /* Spacing for list items */
 </style>
 @endpush
 
@@ -301,19 +345,17 @@
     <div class="cabin-form-header">
         <div>
             <h1>Edit Kabin</h1>
-            <p style="color: var(--light-text); margin-top: 0.25rem;">Perbarui detail untuk kabin: <strong>{{ $cabin->name }}</strong></p>
+            <p>Perbarui detail untuk kabin: <strong>{{ $cabin->name }}</strong></p>
         </div>
         <div class="header-buttons">
             <a href="{{ route('admin.cabins.show', $cabin) }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i>
-                Back
+                Kembali
             </a>
-            
             <a href="{{ route('admin.cabins.index') }}" class="btn btn-dashboard">
-                   <i class="fas fa-list-ul"></i>
-                List Cabins
+                <i class="fas fa-list-ul"></i>
+                Daftar Kabin
             </a>
-            
         </div>
     </div>
 
@@ -342,7 +384,7 @@
                 <div class="form-group">
                     <label for="id_cabin">ID Kabin</label>
                     <input type="text" id="id_cabin" class="form-control" value="{{ $cabin->id_cabin }}" disabled>
-                    <small style="color: var(--light-text);">ID Kabin tidak dapat diubah.</small>
+                    <small style="color: var(--light-text); font-size: 0.8rem;">ID Kabin tidak dapat diubah.</small>
                 </div>
 
                 <div class="form-group">
@@ -390,7 +432,7 @@
                                 </div>
                             @endforeach
                         @else
-                            <p style="color: var(--light-text);" id="no-current-photos">Tidak ada foto saat ini.</p>
+                            <p style="color: var(--light-text); font-size: 0.9rem;" id="no-current-photos">Tidak ada foto saat ini.</p>
                         @endif
                     </div>
                 </div>
@@ -435,9 +477,7 @@
             <div class="preview-content">
                 <h4 id="preview-name" class="preview-name"></h4>
                 <p id="preview-location" class="preview-location">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
-                     <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
-                    </svg>
+                    <i class="fas fa-map-marker-alt"></i>
                     <span></span>
                 </p>
                 <p id="preview-description" class="preview-description"></p>
@@ -464,9 +504,8 @@ document.addEventListener('DOMContentLoaded', function() {
         photoOrderInput: document.getElementById('photo_order'),
         newPhotoInput: document.getElementById('cabin_photos_input'),
         currentPhotosContainer: document.getElementById('current-photos-container'),
-        noCurrentPhotosPlaceholder: document.getElementById('no-current-photos'), // New element
+        noCurrentPhotosPlaceholder: document.getElementById('no-current-photos'),
         
-        // Hidden inputs for form submission
         provinceNameHidden: document.getElementById('province_name_hidden'),
         regencyNameHidden: document.getElementById('regency_name_hidden'),
         locationHidden: document.getElementById('location_hidden'),
@@ -480,9 +519,8 @@ document.addEventListener('DOMContentLoaded', function() {
         newPhotoPreviewImage: document.querySelector('.file-input-wrapper .preview-image'),
         newPhotoInputLabel: document.querySelector('.file-input-wrapper .file-input-label')
     };
-    const assetRoot = "{{ rtrim(asset('storage'), '/') }}"; // Correct asset path for storage
+    const assetRoot = "{{ rtrim(asset('storage'), '/') }}";
 
-    // Initial values from the backend for pre-selection
     const initialProvinceName = elements.provinceNameHidden.value;
     const initialRegencyName = elements.regencyNameHidden.value;
 
@@ -495,7 +533,6 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.provinceNameHidden.value = selectedProvinceName;
         elements.regencyNameHidden.value = selectedRegencyName;
         
-        // Update the combined location field
         if (selectedRegencyName && selectedProvinceName) {
             elements.previewLocation.innerText = `${selectedRegencyName}, ${selectedProvinceName}`;
             elements.locationHidden.value = `${selectedRegencyName}, ${selectedProvinceName}`;
@@ -525,7 +562,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const newPhotosForPreview = newPhotoFiles
             .map(file => ({ src: URL.createObjectURL(file), type: 'new' }));
 
-        // Ensure the correct order: existing photos first, then new ones
         const combinedPhotos = [...existingPhotosForPreview, ...newPhotosForPreview];
         
         if (combinedPhotos.length === 0) {
@@ -557,7 +593,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function updatePhotoOrderInput() {
         const items = elements.currentPhotosContainer.querySelectorAll('.current-photo-item');
-        // Filter out photos marked for deletion from the order array
         const orderedPaths = Array.from(items)
             .filter(item => !item.classList.contains('marked-for-delete'))
             .map(item => item.dataset.photoPath);
@@ -569,7 +604,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (btn) btn.disabled = (index === 0);
         });
 
-        renderLivePreview(); // Re-render preview after order change
+        renderLivePreview();
     }
 
     function handleFileSelection(event) {
@@ -583,7 +618,6 @@ document.addEventListener('DOMContentLoaded', function() {
             elements.newPhotoPreviewImage.style.display = 'none';
             elements.newPhotoInputLabel.style.display = 'block';
         }
-        // If new photos are added, clear any delete selections and re-render preview
         photosToDelete.clear();
         elements.currentPhotosContainer.querySelectorAll('.current-photo-item').forEach(item => {
             item.classList.remove('marked-for-delete');
@@ -595,7 +629,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleSetMain(button) {
         const itemToMove = button.closest('.current-photo-item');
-        // Only move if it's not already the first item and not marked for deletion
         if (itemToMove && itemToMove !== elements.currentPhotosContainer.firstChild && !itemToMove.classList.contains('marked-for-delete')) {
             elements.currentPhotosContainer.insertBefore(itemToMove, elements.currentPhotosContainer.firstChild);
             updatePhotoOrderInput();
@@ -612,19 +645,17 @@ document.addEventListener('DOMContentLoaded', function() {
             photosToDelete.delete(photoPath);
             photoItem.classList.remove('marked-for-delete');
         }
-        // If photos are marked for deletion, clear new photo input
         elements.newPhotoInput.value = ''; 
         newPhotoFiles = [];
         elements.newPhotoPreviewImage.src = '';
         elements.newPhotoPreviewImage.style.display = 'none';
         elements.newPhotoInputLabel.style.display = 'block';
 
-        updatePhotoOrderInput(); // This will trigger renderLivePreview()
+        updatePhotoOrderInput();
     }
 
-    // Initialize delete checkboxes and their visual state based on old input
     elements.currentPhotosContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-        if (checkbox.checked) { // This handles old('delete_photos') on validation error
+        if (checkbox.checked) {
             photosToDelete.add(checkbox.value);
             checkbox.closest('.current-photo-item').classList.add('marked-for-delete');
         }
@@ -637,14 +668,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     elements.newPhotoInput.addEventListener('change', handleFileSelection);
     
-    // Event listeners for text/select inputs to update live preview
     ['name', 'description', 'status'].forEach(id => {
         const el = document.getElementById(id);
         el.addEventListener('keyup', updateTextPreview);
         el.addEventListener('change', updateTextPreview);
     });
     
-    // --- Province & Regency Logic ---
     const API_URL_PROVINCES = "https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json";
     const API_URL_REGENCIES = "https://www.emsifa.com/api-wilayah-indonesia/api/regencies/";
 
@@ -659,15 +688,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 option.textContent = province.name;
                 elements.provinceSelect.appendChild(option);
             });
-            // Pre-select the cabin's province if it exists
             if (initialProvinceName) {
                 const existingOption = Array.from(elements.provinceSelect.options).find(opt => opt.textContent === initialProvinceName);
                 if (existingOption) {
                     elements.provinceSelect.value = existingOption.value;
-                    fetchRegencies(existingOption.value); // Fetch regencies for the pre-selected province
+                    fetchRegencies(existingOption.value);
                 }
             }
-            updateTextPreview(); // Update preview after populating
+            updateTextPreview();
         } catch (error) {
             console.error('Error fetching provinces:', error);
             elements.provinceSelect.innerHTML = '<option value="">Gagal memuat provinsi</option>';
@@ -688,14 +716,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 elements.regencySelect.appendChild(option);
             });
             elements.regencySelect.disabled = false;
-            // Pre-select the cabin's regency if it exists
             if (initialRegencyName) {
                 const existingOption = Array.from(elements.regencySelect.options).find(opt => opt.textContent === initialRegencyName);
                 if (existingOption) {
                     elements.regencySelect.value = existingOption.value;
                 }
             }
-            updateTextPreview(); // Update preview after populating
+            updateTextPreview();
         } catch (error) {
             console.error('Error fetching regencies:', error);
             elements.regencySelect.innerHTML = '<option value="">Gagal memuat kabupaten/kota</option>';
@@ -710,16 +737,15 @@ document.addEventListener('DOMContentLoaded', function() {
             elements.regencySelect.innerHTML = '<option value="">Pilih Kabupaten/Kota</option>';
             elements.regencySelect.disabled = true;
         }
-        updateTextPreview(); // Update preview on province change
+        updateTextPreview();
     });
 
-    elements.regencySelect.addEventListener('change', updateTextPreview); // Update preview on regency change
-    elements.locationAddressInput.addEventListener('input', updateTextPreview); // Keep updating location for preview
+    elements.regencySelect.addEventListener('change', updateTextPreview);
+    elements.locationAddressInput.addEventListener('input', updateTextPreview);
 
-    // Initial calls
-    fetchProvinces(); // Load provinces on page load
-    updateTextPreview(); // Initial text preview
-    updatePhotoOrderInput(); // Initial photo order and preview
+    fetchProvinces();
+    updateTextPreview();
+    updatePhotoOrderInput();
 });
 </script>
 @endpush

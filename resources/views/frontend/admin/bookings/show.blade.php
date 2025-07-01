@@ -4,42 +4,103 @@
 
 @push('styles')
 <style>
+    :root {
+        --primary-color: #229954;
+        --success-color: #28a745;
+        --danger-color: #dc3545;
+        --warning-color: #ffc107;
+        --info-color: #17a2b8;
+        --secondary-color: #6c757d;
+        --dark-green: #223324;
+        --light-grey-bg: #f4f7f6;
+        --white-bg: #fff;
+        --text-dark: #333;
+        --text-medium: #555;
+        --border-light: #eee;
+        --box-shadow: rgba(0,0,0,0.05);
+        --modal-shadow: rgba(0,0,0,0.4);
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: var(--text-dark);
+    }
+
     .admin-page-bg {
-        background-color: #f4f7f6;
-        padding: 20px;
+        background-color: var(--light-grey-bg);
+        padding: 15px; /* Adjusted for mobile */
         min-height: 100vh;
     }
-    .page-title {
-        font-size: 2.2em;
-        color: #223324;
-        margin-bottom: 25px;
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 10px; /* Added horizontal padding */
     }
+
+    .page-title {
+        font-size: 1.8em; /* Adjusted for mobile */
+        color: var(--dark-green);
+        margin-bottom: 20px; /* Adjusted */
+        text-align: center;
+    }
+
     .card {
-        background: #fff;
-        padding: 25px;
+        background: var(--white-bg);
+        padding: 20px; /* Adjusted for mobile */
         border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 15px var(--box-shadow);
         margin-bottom: 20px;
     }
+
+    .card h3 {
+        font-size: 1.4em; /* Adjusted for mobile */
+        color: var(--dark-green);
+        margin-top: 0;
+        margin-bottom: 15px;
+        border-bottom: 1px solid var(--border-light);
+        padding-bottom: 10px;
+    }
+
     .detail-row {
         display: flex;
-        margin-bottom: 10px;
-        font-size: 1.1em;
-        border-bottom: 1px dotted #eee;
+        flex-wrap: wrap; /* Allows wrapping on smaller screens */
+        margin-bottom: 8px; /* Adjusted */
+        font-size: 0.95em; /* Adjusted for mobile */
+        border-bottom: 1px dotted var(--border-light);
         padding-bottom: 5px;
     }
+
     .detail-row strong {
-        flex: 1;
-        color: #333;
+        flex: 1 1 120px; /* Flexible width for labels */
+        color: var(--text-dark);
+        margin-right: 10px;
     }
+
     .detail-row span {
-        flex: 2;
-        color: #555;
+        flex: 2 1 calc(100% - 130px); /* Flexible width for values */
+        color: var(--text-medium);
+        word-break: break-word; /* Prevents long words from overflowing */
+        text-align: left; /* Ensure left alignment for all spans */
     }
+
+    @media (max-width: 768px) {
+        .detail-row {
+            flex-direction: column; /* Stack on smaller screens */
+            align-items: flex-start;
+        }
+        .detail-row strong {
+            margin-bottom: 3px;
+        }
+    }
+
+    /* The .status-badge class is intentionally kept for payment history,
+       but it will be removed from the main booking status display. */
     .status-badge {
         display: inline-block;
-        padding: 0.4em 0.8em;
-        font-size: 0.9em;
+        padding: 0.3em 0.7em; /* Adjusted */
+        font-size: 0.85em; /* Adjusted */
         font-weight: 700;
         line-height: 1;
         text-align: center;
@@ -48,34 +109,114 @@
         border-radius: 0.5rem;
         color: #fff;
     }
-    .bg-warning { background-color: #ffc107; color: #212529; }
-    .bg-success { background-color: #28a745; }
-    .bg-danger { background-color: #dc3545; }
-    .bg-secondary { background-color: #6c757d; }
-    .bg-info { background-color: #17a2b8; }
-    .bg-primary { background-color: #007bff; } /* Added for 'completed' */
 
-    .action-buttons button, .action-buttons a {
-        margin-right: 10px;
-        margin-bottom: 10px;
-        padding: 10px 20px;
+    /* Status badge colors */
+    .bg-warning { background-color: var(--warning-color); color: var(--text-dark); }
+    .bg-success { background-color: var(--success-color); }
+    .bg-danger { background-color: var(--danger-color); }
+    .bg-secondary { background-color: var(--secondary-color); }
+    .bg-info { background-color: var(--info-color); }
+    .bg-primary { background-color: var(--primary-color); }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px; /* Space between buttons */
+        justify-content: center; /* Center buttons on mobile */
+    }
+
+    .action-buttons button,
+    .action-buttons a {
+        flex-grow: 1; /* Allow buttons to grow */
+        max-width: 100%; /* Limit width on smaller screens */
+        padding: 10px 15px; /* Adjusted */
         border-radius: 8px;
-        font-size: 1em;
+        font-size: 0.95em; /* Adjusted */
         font-weight: bold;
         text-decoration: none;
-        transition: background-color 0.3s;
+        transition: background-color 0.3s ease, transform 0.2s ease;
         border: none;
         cursor: pointer;
+        text-align: center;
     }
+
+    .action-buttons button:hover,
+    .action-buttons a:hover {
+        transform: translateY(-2px); /* Slight lift on hover */
+    }
+
+    /* Button colors */
     .btn-success { background-color: #229954; color: white; }
     .btn-success:hover { background-color: #1c7d43; }
-    .btn-danger { background-color: #dc3545; color: white; }
+    .btn-danger { background-color: var(--danger-color); color: white; }
     .btn-danger:hover { background-color: #c82333; }
-    .btn-secondary { background-color: #6c757d; color: white; }
+    .btn-secondary { background-color: var(--secondary-color); color: white; }
     .btn-secondary:hover { background-color: #5a6268; }
-    .btn-primary { background-color: #007bff; color: white; } /* Added for 'completed' button */
+    .btn-primary { background-color: var(--primary-color); color: white; }
     .btn-primary:hover { background-color: #0056b3; }
+    .btn-info { background-color: var(--info-color); color: white; }
+    .btn-info:hover { background-color: #138496; }
 
+    /* Table styles */
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    .table th,
+    .table td {
+        padding: 10px 8px; /* Adjusted padding */
+        border: 1px solid var(--border-light);
+        text-align: left;
+        font-size: 0.9em; /* Adjusted for mobile */
+    }
+
+    .table th {
+        background-color: var(--light-grey-bg);
+        font-weight: bold;
+        color: var(--text-dark);
+    }
+
+    /* Responsive table for small screens */
+    @media (max-width: 600px) {
+        .table thead {
+            display: none; /* Hide table headers */
+        }
+
+        .table, .table tbody, .table tr, .table td {
+            display: block; /* Make table elements act like block elements */
+            width: 100%;
+        }
+
+        .table tr {
+            margin-bottom: 15px;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px var(--box-shadow);
+        }
+
+        .table td {
+            text-align: right;
+            padding-left: 50%; /* Space for pseudo-element label */
+            position: relative;
+        }
+
+        .table td::before {
+            content: attr(data-label); /* Use data-label for content */
+            position: absolute;
+            left: 8px;
+            width: calc(50% - 16px);
+            padding-right: 10px;
+            white-space: nowrap;
+            text-align: left;
+            font-weight: bold;
+            color: var(--text-dark);
+        }
+    }
+
+    /* Modal styles */
     .modal-overlay {
         display: none;
         position: fixed;
@@ -88,65 +229,86 @@
         background-color: rgba(0,0,0,0.6);
         justify-content: center;
         align-items: center;
+        animation: fadeIn 0.3s ease-out;
     }
+
     .modal-content {
-        background-color: #fefefe;
+        background-color: var(--white-bg);
         margin: auto;
-        padding: 30px;
+        padding: 25px; /* Adjusted */
         border-radius: 12px;
-        width: 90%;
+        width: 95%; /* Increased width for mobile */
         max-width: 500px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        box-shadow: 0 5px 15px var(--modal-shadow);
         position: relative;
+        animation: slideIn 0.3s ease-out;
     }
+
     .modal-close-btn {
         position: absolute;
-        top: 15px;
-        right: 20px;
+        top: 10px; /* Adjusted */
+        right: 15px; /* Adjusted */
         color: #aaa;
-        font-size: 28px;
+        font-size: 32px; /* Slightly larger */
         font-weight: bold;
         cursor: pointer;
+        transition: color 0.2s ease;
     }
     .modal-close-btn:hover,
     .modal-close-btn:focus {
-        color: black;
+        color: #555; /* Darker on hover */
         text-decoration: none;
-        cursor: pointer;
     }
+
     .modal-content h3 {
         margin-top: 0;
-        color: #223324;
-        margin-bottom: 20px;
-        border-bottom: 1px solid #eee;
+        color: var(--dark-green);
+        margin-bottom: 15px; /* Adjusted */
+        border-bottom: 1px solid var(--border-light);
         padding-bottom: 10px;
+        font-size: 1.3em; /* Adjusted */
     }
+
     .modal-content label {
         display: block;
-        margin-bottom: 8px;
+        margin-bottom: 6px; /* Adjusted */
         font-weight: 600;
+        font-size: 0.95em; /* Adjusted */
     }
+
     .modal-content textarea,
     .modal-content input[type="text"] {
-        width: calc(100% - 22px);
+        width: calc(100% - 20px); /* Adjusted width */
         padding: 10px;
         margin-bottom: 15px;
         border: 1px solid #ccc;
         border-radius: 5px;
-        font-size: 1em;
-    }
-    .modal-buttons {
-        text-align: right;
-    }
-    .modal-buttons button {
-        margin-left: 10px;
+        font-size: 0.95em; /* Adjusted */
+        box-sizing: border-box; /* Include padding in width */
     }
 
+    .modal-buttons {
+        text-align: right;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px; /* Space between buttons */
+        flex-wrap: wrap;
+    }
+
+    .modal-buttons button {
+        padding: 8px 15px; /* Adjusted */
+        font-size: 0.9em; /* Adjusted */
+        border-radius: 6px;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    /* Alert messages */
     .alert {
         padding: 15px;
         margin-bottom: 20px;
         border: 1px solid transparent;
         border-radius: 8px;
+        font-size: 0.95em; /* Adjusted */
     }
     .alert-danger {
         color: #721c24;
@@ -158,10 +320,21 @@
         background-color: #d4edda;
         border-color: #c3e6cb;
     }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+        from { transform: translateY(-30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
 </style>
 @endpush
 
-@section('admin_content') {{-- CHANGE THIS LINE --}}
+@section('admin_content')
 <div class="admin-page-bg">
     <div class="container">
         <h1 class="page-title">Detail Booking #{{ $booking->id_booking }}</h1>
@@ -191,16 +364,17 @@
                 <strong>ID Booking:</strong> <span>{{ $booking->id_booking }}</span>
             </div>
             <div class="detail-row">
-                <strong>Status:</strong> <span class="status-badge {{ $booking->status_badge_class }}">{{ $booking->status_label }}</span>
+                {{-- Removed 'status-badge' class to make it left-aligned and without badge styling --}}
+                <strong>Status:</strong> <span>{{ $booking->status_label }}</span>
             </div>
             <div class="detail-row">
                 <strong>Tanggal Booking:</strong> <span>{{ \Carbon\Carbon::parse($booking->booking_date)->locale('id')->isoFormat('dddd, D MMMM YYYY [pukul] HH:mm') }}</span>
             </div>
             <div class="detail-row">
-                <strong>Kabin:</strong> <span>{{ $booking->cabin->name ?? 'N/A' }} ({{ $booking->cabin->location ?? 'N/A' }})</span>
+                <strong>Kabin:</strong> <span>{{ $booking->cabin->name ?? 'N/A' }} ({{ $booking->cabin->location_address ?? 'N/A' }})</span>
             </div>
             <div class="detail-row">
-                <strong>Kamar:</strong> <span>{{ $booking->room->room_name ?? 'N/A' }} (Tipe: {{ $booking->room->typeroom ?? 'N/A' }}, Biaya: {{ number_format($booking->room->price ?? 0, 0, ',', '.') }}/malam)</span>
+                <strong>Kamar:</strong> <span>{{ $booking->room->typeroom ?? 'N/A' }}
             </div>
             <div class="detail-row">
                 <strong>Tanggal Check-in:</strong> <span>{{ \Carbon\Carbon::parse($booking->check_in_date)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</span>
@@ -266,7 +440,7 @@
                 <strong>Catatan Admin:</strong> <span>{{ $booking->admin_notes }}</span>
             </div>
             @endif
-             {{-- New section for completed status log --}}
+            {{-- New section for completed status log --}}
             <div class="detail-row">
                 <strong>Diselesaikan Oleh:</strong> <span>{{ $booking->completedBy->name ?? '-' }} pada {{ $booking->completed_at ? \Carbon\Carbon::parse($booking->completed_at)->locale('id')->isoFormat('D MMMM YYYY, HH:mm') : '-' }}</span>
             </div>
@@ -275,37 +449,38 @@
         <div class="card">
             <h3>Riwayat Pembayaran</h3>
             @if($booking->payments->isNotEmpty())
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID Pembayaran</th>
-                            <th>Jumlah</th>
-                            <th>Metode</th>
-                            <th>ID Transaksi</th>
-                            <th>Status</th>
-                            <th>Tanggal</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($booking->payments as $payment)
-                        <tr>
-                            <td>{{ $payment->id_payment }}</td>
-                            <td>Rp {{ number_format($payment->amount, 0, ',', '.') }}</td>
-                            <td>{{ $payment->payment_method }}</td>
-                            <td>{{ $payment->transaction_id ?? '-' }}</td>
-                            <td><span class="badge {{ $payment->status == 'completed' || $payment->status == 'settlement' ? 'bg-success' : ($payment->status == 'pending' ? 'bg-warning' : 'bg-danger') }}">{{ ucfirst($payment->status) }}</span></td>
-                            <td>{{ \Carbon\Carbon::parse($payment->created_at)->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                <div class="table-responsive"> {{-- Added a responsive wrapper for table --}}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID Pembayaran</th>
+                                <th>Jumlah</th>
+                                <th>Metode</th>
+                                <th>ID Transaksi</th>
+                                <th>Status</th>
+                                <th>Tanggal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($booking->payments as $payment)
+                            <tr>
+                                <td data-label="ID Pembayaran">{{ $payment->id_payment }}</td>
+                                <td data-label="Jumlah">Rp {{ number_format($payment->amount, 0, ',', '.') }}</td>
+                                <td data-label="Metode">{{ $payment->payment_method }}</td>
+                                <td data-label="ID Transaksi">{{ $payment->transaction_id ?? '-' }}</td>
+                                <td data-label="Status"><span class="status-badge {{ $payment->status == 'completed' || $payment->status == 'settlement' ? 'bg-success' : ($payment->status == 'pending' ? 'bg-warning' : 'bg-danger') }}">{{ ucfirst($payment->status) }}</span></td>
+                                <td data-label="Tanggal">{{ \Carbon\Carbon::parse($payment->created_at)->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             @else
                 <p>Belum ada pembayaran untuk booking ini.</p>
             @endif
         </div>
 
         <div class="card action-buttons">
-            <h3>Aksi Admin</h3>
             @if ($booking->status === 'pending')
                 <button class="btn btn-success" onclick="openModal('confirmModal')">Konfirmasi Booking</button>
                 <button class="btn btn-danger" onclick="openModal('rejectModal')">Tolak Booking</button>

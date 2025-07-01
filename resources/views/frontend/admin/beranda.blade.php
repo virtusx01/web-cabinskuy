@@ -655,14 +655,8 @@
             </article>
 
             <article class="action-card">
-                <div class="icon"><i class="fas fa-file-invoice-dollar"></i></div>
-                <h3>Laporan Keuangan</h3>
-                <a href="{{ route('admin.reports.financial') }}" title="Lihat laporan keuangan">Lihat</a>
-            </article>
-
-            <article class="action-card">
                 <div class="icon"><i class="fas fa-calendar-alt"></i></div>
-                <h3>Laporan Booking</h3>
+                <h3>Laporan</h3>
                 <a href="{{ route('admin.reports.booking') }}" title="Lihat laporan booking">Lihat</a>
             </article>
 

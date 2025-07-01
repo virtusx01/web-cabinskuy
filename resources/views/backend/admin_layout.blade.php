@@ -431,7 +431,7 @@
                             <a href="{{ route('admin.cabins.create') }}">Tambah Kabin Baru</a>
                             <a href="{{ route('admin.cabins.index') }}">Kelola Kabin</a>
                             <a href="{{ route('admin.bookings.index') }}">Kelola Booking</a>
-                            <a href="{{ route('admin.reports.booking') }}">Laporan Booking</a>
+                            <a href="{{ route('admin.reports.booking') }}">Laporan</a>
                             @if (Auth::user()->isSuperAdmin())
                                 <a href="{{ route('admin.employees.index') }}">Kelola Karyawan</a>
                             @endif

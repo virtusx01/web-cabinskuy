@@ -276,8 +276,8 @@ class Booking extends Model
             'confirmed' => 'badge-success',
             'rejected'  => 'badge-danger',
             'cancelled' => 'badge-secondary',
-            'completed' => 'badge-primary', // <<< TAMBAHKAN INI
-            'paid'      => 'badge-primary',
+            'completed' => 'badge-success', // <<< TAMBAHKAN INI
+            'paid'      => 'badge-success',
             'challenge' => 'badge-info',
             'expired'   => 'badge-danger',
             'failed'    => 'badge-danger',

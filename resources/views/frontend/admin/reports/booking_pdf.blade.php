@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Laporan Booking Cabinskuy</title>
+    <title>Laporan Booking Selesai Cabinskuy</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -56,33 +56,39 @@
             color: #777;
         }
         table {
-            width: 95%;
+            width: 100%; /* Changed to 100% to utilize full available width */
             margin-left: auto;
             margin-right: auto;
             border-collapse: collapse;
             margin-top: 25px;
             background-color: #fff;
-            font-size: 8pt; /* Reduced font size for the table */
+            font-size: 8pt; /* Base font size for table */
+            table-layout: fixed; /* Added to help with column width distribution */
         }
         th, td {
             border: 1px solid #e0e0e0;
-            padding: 10px 12px;
+            padding: 7px 5px; /* Reduced padding for more content space */
             text-align: left;
             color: #333;
+            word-wrap: break-word; /* Ensure long words break */
         }
         th {
             background-color: #f5f5f5;
             font-weight: 600;
             color: #000;
             text-align: center;
+            font-size: 7.5pt; /* Slightly reduced font size for headers */
+        }
+        td {
+            font-size: 7pt; /* Further reduced font size for table data */
         }
         tbody tr:nth-child(even) {
             background-color: #f9f9f9;
         }
         /* Style untuk baris kosong agar tingginya sama */
         tr.empty-row td {
-            padding: 10px 12px;
-            height: 37px; /* Sesuaikan tinggi agar sama dengan baris berisi data */
+            padding: 7px 5px; /* Match padding of data rows */
+            height: 30px; /* Adjusted height to be roughly consistent */
             color: #fff; /* Sembunyikan &nbsp; */
         }
         .text-center { text-align: center; }
@@ -125,11 +131,41 @@
             page-break-after: always;
         }
 
+        /* Column Widths (example, adjust as needed) */
+        /* These widths are percentages of the overall table width (100%) */
+        .col-id-booking { width: 12%; }
+        .col-tanggal-booking { width: 10%; }
+        .col-kabin { width: 8%; }
+        .col-ruangan { width: 8%; }
+        .col-jumlah-kamar { width: 7%; }
+        .col-pemesan { width: 15%; } /* Can be larger */
+        .col-check-in { width: 10%; }
+        .col-check-out { width: 10%; }
+        .col-total-tamu { width: 6%; }
+        .col-biaya { width: 10%; }
+        .col-status { width: 7%; }
+
+        /* Total Income Styling */
+        .total-income-section {
+            margin-top: 20px;
+            text-align: right;
+            font-size: 12pt;
+            font-weight: bold;
+            color: #000;
+            padding-right: 20px; /* Align with signature block */
+        }
+        .total-income-section span {
+            color: #229954; /* Primary color for income */
+        }
+
         /* Aturan khusus untuk cetak */
         @media print {
             body { padding: 20px; }
             .page-break { page-break-after: always; }
             .page-container { min-height: 90vh; } /* Optimalkan untuk A4 */
+            /* Further reduce font size for print if necessary, though 7pt should be small enough */
+            td { font-size: 6.5pt; }
+            th { font-size: 7pt; }
         }
     </style>
 </head>
@@ -147,12 +183,12 @@
             <div class="page-container">
                 <div class="header">
                     <h1>CABINSKUY</h1>
-                    <p>Laporan Booking Perusahaan</p>
+                    <p>Laporan Booking Selesai</p>
                 </div>
 
                 <div class="report-details">
                     <div class="report-title-left">
-                        Laporan Booking Bulan {{ $monthName }} {{ $year }}
+                        Laporan Booking Selesai Bulan {{ $monthName }} {{ $year }}
                     </div>
                     <div class="print-date">
                         Dicetak pada: {{ $printDate ?? (\Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y H:i:s') . ' WIB') }}
@@ -162,17 +198,17 @@
                 <table>
                     <thead>
                         <tr>
-                            <th class="text-center">ID Booking</th>
-                            <th class="text-center">Tanggal Booking</th>
-                            <th class="text-center">Kabin</th>
-                            <th class="text-center">Ruangan</th>
-                            <th class="text-center">Jumlah Kamar</th>
-                            <th>Pemesan</th>
-                            <th class="text-center">Check-in</th>
-                            <th class="text-center">Check-out</th>
-                            <th class="text-center">Total Tamu</th>
-                            <th class="text-right">Biaya (Rp)</th>
-                            <th class="text-center">Status</th>
+                            <th class="text-center col-id-booking">ID Booking</th>
+                            <th class="text-center col-tanggal-booking">Tanggal Booking</th>
+                            <th class="text-center col-kabin">Kabin</th>
+                            <th class="text-center col-ruangan">Ruangan</th>
+                            <th class="text-center col-jumlah-kamar">Jumlah Kamar</th>
+                            <th class="col-pemesan">Pemesan</th>
+                            <th class="text-center col-check-in">Check-in</th>
+                            <th class="text-center col-check-out">Check-out</th>
+                            <th class="text-center col-total-tamu">Total Tamu</th>
+                            <th class="text-right col-biaya">Biaya (Rp)</th>
+                            <th class="text-center col-status">Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -205,8 +241,11 @@
                     </tbody>
                 </table>
                 
-                {{-- Hanya tampilkan blok tanda tangan dan footer di halaman terakhir --}}
+                {{-- Total pendapatan hanya ditampilkan di halaman terakhir --}}
                 @if ($loop->last)
+                    <div class="total-income-section">
+                        Total Pendapatan: <span>{{ 'Rp' . number_format($totalIncome, 0, ',', '.') }}</span>
+                    </div>
                     <div class="signature-block-wrapper">
                         <div class="horizontal-line-separator"></div>
                         <div class="signature-block">
@@ -229,49 +268,59 @@
     @else
         {{-- Tampilan jika tidak ada data booking sama sekali --}}
         <div class="page-container">
-               <div class="header">
-                 <h1>CABINSKUY</h1>
-                 <p>Laporan Booking Perusahaan</p>
-             </div>
-             <div class="report-details">
-                 <div class="report-title-left">
-                     Laporan Booking Bulan {{ $monthName }} {{ $year }}
-                 </div>
-                 <div class="print-date">
-                     Dicetak pada: {{ $printDate ?? (\Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y H:i:s') . ' WIB') }}
-                 </div>
-             </div>
-             <table>
-                 <thead>
-                     <tr>
-                         <th class="text-center">ID Booking</th> <th class="text-center">Tanggal Booking</th> <th class="text-center">Kabin</th>
-                         <th class="text-center">Ruangan</th> <th class="text-center">Jumlah Kamar</th> <th>Pemesan</th> <th class="text-center">Check-in</th>
-                         <th class="text-center">Check-out</th> <th class="text-center">Total Tamu</th> <th class="text-right">Biaya (Rp)</th>
-                         <th class="text-center">Status</th>
-                     </tr>
-                 </thead>
-                 <tbody>
-                     @for ($i = 0; $i < $rowsPerPage; $i++)
-                         <tr class="empty-row">
-                             <td>&nbsp;</td> <td>&nbsp;</td> <td>&nbsp;</td> <td>&nbsp;</td> <td>&nbsp;</td>
-                             <td>&nbsp;</td> <td>&nbsp;</td> <td>&nbsp;</td> <td>&nbsp;</td> <td>&nbsp;</td>
-                             <td>&nbsp;</td>
-                         </tr>
-                     @endfor
-                 </tbody>
-             </table>
-             <div class="signature-block-wrapper">
-                 <div class="horizontal-line-separator"></div>
-                 <div class="signature-block">
-                     <p>Hormat kami,</p>
-                     <div class="signature-line"></div>
-                     <p>Direktur Cabinskuy</p>
-                 </div>
-                 <div class="footer">
-                     &copy; {{ \Carbon\Carbon::now()->year }} Cabinskuy. Semua Hak Dilindungi.
-                 </div>
-             </div>
-         </div>
+            <div class="header">
+                <h1>CABINSKUY</h1>
+                <p>Laporan Booking Selesai</p>
+            </div>
+            <div class="report-details">
+                <div class="report-title-left">
+                    Laporan Booking Selesai Bulan {{ $monthName }} {{ $year }}
+                </div>
+                <div class="print-date">
+                    Dicetak pada: {{ $printDate ?? (\Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y H:i:s') . ' WIB') }}
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="text-center col-id-booking">ID Booking</th>
+                        <th class="text-center col-tanggal-booking">Tanggal Booking</th>
+                        <th class="text-center col-kabin">Kabin</th>
+                        <th class="text-center col-ruangan">Ruangan</th>
+                        <th class="text-center col-jumlah-kamar">Jumlah Kamar</th>
+                        <th class="col-pemesan">Pemesan</th>
+                        <th class="text-center col-check-in">Check-in</th>
+                        <th class="text-center col-check-out">Check-out</th>
+                        <th class="text-center col-total-tamu">Total Tamu</th>
+                        <th class="text-right col-biaya">Biaya (Rp)</th>
+                        <th class="text-center col-status">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for ($i = 0; $i < $rowsPerPage; $i++)
+                        <tr class="empty-row">
+                            <td>&nbsp;</td> <td>&nbsp;</td> <td>&nbsp;</td> <td>&nbsp;</td> <td>&nbsp;</td>
+                            <td>&nbsp;</td> <td>&nbsp;</td> <td>&nbsp;</td> <td>&nbsp;</td> <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                        </tr>
+                    @endfor
+                </tbody>
+            </table>
+            <div class="total-income-section">
+                Total Pendapatan: Rp <span>0</span>
+            </div>
+            <div class="signature-block-wrapper">
+                <div class="horizontal-line-separator"></div>
+                <div class="signature-block">
+                    <p>Hormat kami,</p>
+                    <div class="signature-line"></div>
+                    <p>Direktur Cabinskuy</p>
+                </div>
+                <div class="footer">
+                    &copy; {{ \Carbon\Carbon::now()->year }} Cabinskuy. Semua Hak Dilindungi.
+                </div>
+            </div>
+        </div>
     @endif
 </body>
 </html>
