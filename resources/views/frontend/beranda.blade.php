@@ -433,6 +433,7 @@
                 <span class="tab-link active" data-tab="standard" data-translate="standard">Standard</span>
                 <span class="tab-link" data-tab="deluxe" data-translate="deluxe">Deluxe</span>
                 <span class="tab-link" data-tab="executive" data-translate="executive">Executive</span>
+                <span class="tab-link" data-tab="family_suit" data-translate="family_suit">Family Suit</span>
             </div>
 
             <div id="standard" class="tab-content">
@@ -488,6 +489,26 @@
                             <li data-translate="executive_feature5">Personalized concierge service</li>
                         </ul>
                         <p><strong data-translate="offers">Offers:</strong> <span data-translate="executive_offers">Complimentary minibar, private bonfire setup, 20% off spa services.</span></p>
+                    </div>
+                </div>
+            </div>
+            <div id="family_suit" class="tab-content">
+                <div class="cabin-type-details">
+                    <div class="image-container">
+                        <img src="{{ asset('images/assets/cabinroom4.jpg') }}" alt="Family Suit Cabin">
+                    </div>
+                    <div class="text-container">
+                        <h3 data-translate="family_suit_title">Family Suit Cabin</h3>
+                        <p data-translate="family_suit_desc">Perfect for larger families or groups, our Family Suit Cabin offers abundant space and amenities designed for a comfortable and enjoyable shared experience.</p>
+                        <ul>
+                            <li data-translate="family_suit_feature1">Multiple bedrooms with various bed sizes</li>
+                            <li data-translate="family_suit_feature2">Spacious living area for family gatherings</li>
+                            <li data-translate="family_suit_feature3">Full-sized kitchen and dining area</li>
+                            <li data-translate="family_suit_feature4">Multiple bathrooms</li>
+                            <li data-translate="family_suit_feature5">Private outdoor space with BBQ facilities</li>
+                            <li data-translate="family_suit_feature6">Children's play area (if applicable)</li>
+                        </ul>
+                        <p><strong data-translate="offers">Offers:</strong> <span data-translate="family_suit_offers">Complimentary board games, discount on local activity bookings, late check-out upon availability.</span></p>
                     </div>
                 </div>
             </div>
@@ -611,9 +632,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Kode JavaScript Anda yang lain (untuk tanggal, dll.) sudah di user_layout.blade.php
-    // Tidak perlu duplikasi di sini kecuali ada kebutuhan spesifik untuk beranda.
-    // Jika Anda ingin menginisialisasi nilai date input pada halaman beranda, bisa ditambahkan di sini.
+    // Code for cabin type tabs
+    const tabLinks = document.querySelectorAll('.cabin-types-tabs .tab-link');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            const tabId = this.dataset.tab;
+
+            tabLinks.forEach(l => l.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+
+            this.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+
+    // Set the first tab as active by default if none are
+    if (tabLinks.length > 0 && !document.querySelector('.cabin-types-tabs .tab-link.active')) {
+        tabLinks[0].click();
+    }
+
+
     const check_in_dateInput = document.getElementById('check_in_date');
     const check_out_dateInput = document.getElementById('check_out_date');
 
