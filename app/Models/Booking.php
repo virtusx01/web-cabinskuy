@@ -65,6 +65,8 @@ class Booking extends Model
         'cancelled_at',
         'cancellation_reason',
         'qr_validation_token',
+        'completed_at', // <<< TAMBAHKAN INI
+        'completed_by', // <<< TAMBAHKAN INI
     ];
 
     /**
@@ -76,7 +78,7 @@ class Booking extends Model
         'booking_date'   => 'datetime',
         'confirmed_at'   => 'datetime',
         'rejected_at'    => 'datetime',
-        'cancelled_at'   => 'datetime',
+        'cancelled_at'   => 'datetime', // <<< TAMBAHKAN INI
         'total_price'    => 'decimal:2',
         'total_guests'   => 'integer',
         'total_nights'   => 'integer',
@@ -106,7 +108,7 @@ class Booking extends Model
                 
                 // Jika nama kosong atau tidak menghasilkan inisial, fallback ke CUS
                 if (empty($initials)) {
-                    $initials = 'CUS'; 
+                    $initials = 'CUS';
                 }
 
                 // Format tanggal dan waktu saat ini
@@ -161,6 +163,15 @@ class Booking extends Model
     }
 
     /**
+     * Relasi ke User yang menyelesaikan (admin).
+     * <<< TAMBAHKAN INI
+     */
+    public function completedBy()
+    {
+        return $this->belongsTo(User::class, 'completed_by', 'id_user');
+    }
+
+    /**
      * Relasi ke model Payment.
      */
     public function payments()
@@ -183,7 +194,7 @@ class Booking extends Model
     public function successfulPayment()
     {
         return $this->hasOne(Payment::class, 'id_booking', 'id_booking')
-                    ->where('status', 'completed'); // Assuming 'settlement' means successful payment
+                    ->where('status', 'paid'); // Assuming 'settlement' means successful payment
     }
 
     // --- SCOPES ---
@@ -205,11 +216,11 @@ class Booking extends Model
     }
 
     /**
-     * Scope untuk booking yang berhasil (completed).
+     * Scope untuk booking yang berhasil (paid).
      */
     public function scopeSuccessful($query)
     {
-        return $query->where('status', 'completed');
+        return $query->where('status', 'paid');
     }
 
     /**
@@ -226,6 +237,7 @@ class Booking extends Model
      */
     public function scopeActiveOnDateRange($query, $checkIn, $checkOut)
     {
+        // Modify this scope to exclude 'completed' and 'rejected' bookings
         return $query->whereIn('status', ['pending', 'confirmed', 'challenge'])
                      ->where(function ($q) use ($checkIn, $checkOut) {
                          $q->where('check_in_date', '<', $checkOut)
@@ -245,7 +257,8 @@ class Booking extends Model
             'confirmed' => 'Dikonfirmasi',
             'rejected'  => 'Ditolak',
             'cancelled' => 'Dibatalkan',
-            'completed' => 'Pembayaran Berhasil', // This should be 'settlement' from Midtrans callback
+            'completed' => 'Selesai', // <<< TAMBAHKAN INI
+            'paid'      => 'Pembayaran Berhasil',
             'challenge' => 'Verifikasi Fraud',
             'expired'   => 'Pembayaran Kadaluarsa',
             'failed'    => 'Pembayaran Gagal',
@@ -263,7 +276,8 @@ class Booking extends Model
             'confirmed' => 'badge-success',
             'rejected'  => 'badge-danger',
             'cancelled' => 'badge-secondary',
-            'completed' => 'badge-primary',
+            'completed' => 'badge-primary', // <<< TAMBAHKAN INI
+            'paid'      => 'badge-primary',
             'challenge' => 'badge-info',
             'expired'   => 'badge-danger',
             'failed'    => 'badge-danger',
@@ -318,12 +332,12 @@ class Booking extends Model
     }
 
     /**
-     * Method untuk cek apakah booking ini berhasil (completed).
+     * Method untuk cek apakah booking ini berhasil (paid).
      */
     public function isSuccessful(): bool
     {
         // A booking is successful if its status is 'confirmed' AND it has a successful payment.
-        // Or if the payment status directly transitions to 'completed' (e.g., from Midtrans).
+        // Or if the payment status directly transitions to 'paid' (e.g., from Midtrans).
         return $this->status === 'confirmed' && $this->isPaid();
     }
 
@@ -360,6 +374,8 @@ class Booking extends Model
         ]);
     }
 
+    
+
     /**
      * Tolak booking.
      */
@@ -383,13 +399,13 @@ class Booking extends Model
      */
     public function cancel($reason = null): bool
     {
-        if (!$this->canBeCancelled()) {
+        if (!in_array($this->status, ['pending', 'challenge', 'confirmed'])) { // Allow cancellation of confirmed bookings too
             return false;
         }
         
         return $this->update([
-            'status'            => 'cancelled',
-            'cancelled_at'      => now(),
+            'status'              => 'cancelled',
+            'cancelled_at'        => now(),
             'cancellation_reason' => $reason ?? 'Dibatalkan oleh user',
         ]);
     }
@@ -415,24 +431,49 @@ class Booking extends Model
     }
 
     /**
-     * Method untuk menandai booking sebagai completed.
-     * Note: In a real system, 'completed' might be set by the admin after check-out,
+     * Method untuk menandai booking sebagai paid.
+     * Note: In a real system, 'paid' might be set by the admin after check-out,
      * or it might refer to payment settlement. If it's payment settlement, then `status`
      * should become 'confirmed' and the payment record becomes 'settlement'.
-     * For now, I'll assume 'completed' is a final state after successful payment and possibly check-out.
+     * For now, I'll assume 'paid' is a final state after successful payment and possibly check-out.
      * Based on your `getBookingStatus`, 'confirmed' seems to be the state after successful payment.
-     * Let's clarify: if 'completed' means payment successful, then `isSuccessful()` should rely on `isPaid()`
+     * Let's clarify: if 'paid' means payment successful, then `isSuccessful()` should rely on `isPaid()`
      * and the booking status becoming 'confirmed'.
      */
-    public function markAsCompleted(): bool
+    public function markAsPaid(): bool
     {
         // This method might be better named `markPaymentAsSettled` or `markAsCheckedIn`
         // depending on your workflow. For consistency with previous definitions,
-        // if 'completed' is a final status for the booking itself, use it.
+        // if 'paid' is a final status for the booking itself, use it.
         return $this->update([
-            'status' => 'completed'
+            'status' => 'paid'
         ]);
     }
+
+    /**
+     * Mark the booking as completed.
+     * <<< TAMBAHKAN INI
+     */
+    public function complete($adminId, $notes): bool
+    {
+        // A booking can only be completed if it's 'confirmed' and the check-in date has passed or is today.
+        // It can also be completed if it's currently 'paid' if you use that as a transitional status.
+        $canBeCompleted = $this->status === 'confirmed' || $this->status === 'paid';
+        $isCheckInTodayOrPast = Carbon::now()->startOfDay()->gte($this->check_in_date->startOfDay());
+
+        if (!$canBeCompleted || !$isCheckInTodayOrPast) {
+            return false;
+        }
+
+        return $this->update([
+            'status'       => 'completed',
+            'completed_at' => now(),
+            'completed_by' => $adminId,
+            'admin_notes'  => $notes,
+            'qr_validation_token' => null, // Invalidate QR token upon completion
+        ]);
+    }
+
 
     /**
      * Generate a unique QR validation token for the booking and return its validation URL.

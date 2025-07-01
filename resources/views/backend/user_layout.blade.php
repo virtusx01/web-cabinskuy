@@ -697,6 +697,11 @@
                 left: 50%;
                 transform: translateX(-50%);
             }
+            
+            .footer-column.footer-contact p{
+                text-align: center !important;
+                justify-content: center;
+            }
 
             .modal-content {
                 padding: 32px 24px;
@@ -878,7 +883,11 @@
                 <p>
                     <i class="fas fa-map-marker-alt"></i> <span data-translate="footer_address">Jl. Alam Asri No. 123,<br>Bandung, Indonesia</span>
                 </p>
-                <p><i class="fas fa-phone"></i> <span data-translate="footer_phone">(022) 123-4567</span></p>
+                <p>
+                    <a href="https://wa.me/6281574422949" target="_blank" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                        <i class="fab fa-whatsapp"></i> <span data-translate="footer_phone">+6281574422949</span>
+                    </a>
+                </p>
                 <p><i class="fas fa-envelope"></i> <span data-translate="footer_email">halo@cabinskuy.com</span></p>
             </div>
         </div>
@@ -925,7 +934,7 @@
                 footer_privacy: "Privacy Policy",
                 footer_contact_title: "Contact Us",
                 footer_address: "Jl. Alam Asri No. 123,<br>Bandung, Indonesia",
-                footer_phone: "(022) 123-4567",
+                footer_phone: "+6281574422949", // Updated phone number
                 footer_email: "halo@cabinskuy.com",
                 footer_copyright: "© 2025 Cabinskuy. All rights reserved.", // Updated year dynamically
 
@@ -1015,7 +1024,7 @@
                 footer_privacy: "Kebijakan Privasi",
                 footer_contact_title: "Hubungi Kami",
                 footer_address: "Jl. Alam Asri No. 123,<br>Bandung, Indonesia",
-                footer_phone: "(022) 123-4567",
+                footer_phone: "+6281574422949", // Updated phone number
                 footer_email: "halo@cabinskuy.com",
                 footer_copyright: "© 2025 Cabinskuy. Hak Cipta Dilindungi.", // Updated year dynamically
 

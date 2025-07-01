@@ -26,7 +26,7 @@ return new class extends Migration
             $table->json('payment_details')->nullable(); // Menggunakan 'json' cast di model, jadi lebih baik tipe kolom ini juga 'json'
                                                          // atau 'text' jika database lama dan belum mendukung 'json'
             // PERBAIKAN: Enum status harus mencakup semua status yang mungkin dari Midtrans dan logika aplikasi.
-            $table->enum('status', ['pending', 'completed', 'failed', 'cancelled', 'expired', 'challenge'])->default('pending');
+            $table->enum('status', ['pending', 'paid', 'failed', 'cancelled', 'expired', 'challenge'])->default('pending');
 
             // Foreign Key untuk user yang melakukan pembayaran (bisa sama dengan user_id di booking atau admin yang memproses)
             // PERBAIKAN: Ini harus mereferensikan tabel 'users', bukan 'bookings'.

@@ -539,7 +539,7 @@
                     <label for="total_guests">Jumlah Tamu</label>
                     <input type="number" id="total_guests" min="1" max="10" value="2">
                 </div>
-                <button type="button" class="btn-check-availability" onclick="checkAllRoomsAvailability()">
+                <button type="button" class="btn-check-availability" onclick="checkAllRoomsAvailabilityAndScroll()">
                     Cek Ketersediaan
                 </button>
             </div>
@@ -552,7 +552,7 @@
             </div>
         </section>
 
-        <section class="room-selection-section">
+        <section class="room-selection-section" id="room-selection-section">
             <h3 class="section-title">Select Your Room</h3>
             <div class="rooms-list">
                 @forelse ($cabin->rooms as $room)
@@ -632,6 +632,7 @@
     const globalCheckout = document.getElementById('global_checkout_date');
     const totalGuests = document.getElementById('total_guests');
     const thumbnails = document.querySelectorAll('#thumbnail-grid img');
+    const roomSelectionSection = document.getElementById('room-selection-section');
 
     // Initialize slider states
     let mainSlideIndex = 0;
@@ -890,6 +891,15 @@
             const id_room = roomCard.getAttribute('data-room-id');
             checkRoomAvailability(id_room, checkinDate, checkoutDate, guests);
         });
+    }
+
+    // Function to initiate availability check and then scroll
+    window.checkAllRoomsAvailabilityAndScroll = function() {
+        checkAllRoomsAvailability(); // First, check availability
+        // Then, scroll to the room selection section with smooth behavior
+        if (roomSelectionSection) {
+            roomSelectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
     function checkRoomAvailability(id_room, checkinDate, checkoutDate, guests) {

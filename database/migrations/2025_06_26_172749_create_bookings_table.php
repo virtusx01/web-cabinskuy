@@ -29,12 +29,7 @@ return new class extends Migration
             // --- Booking Details ---
             $table->date('check_in_date');
             $table->date('check_out_date');
-            // 'checkin_room' perlu dikonfirmasi penggunaannya. Jika untuk jumlah tamu, gunakan total_guests.
-            // Jika ini memang merepresentasikan "slot" yang diambil, maka biarkan, tapi namanya ambigu.
-            // Saya asumsikan ini adalah 'total_guests' atau 'occupancy_count'.
-            // Kalau ini adalah jumlah kamar yang dipesan, dan slot_room adalah jumlah kamar yang tersedia, maka ini benar.
-            // Untuk saat ini saya biarkan sesuai aslinya.
-            $table->integer('checkin_room');
+            $table->integer('checkin_room'); // Asumsi ini jumlah slot yang diambil/kamar yang dipesan
             $table->integer('total_guests');
             $table->integer('total_nights');
             $table->decimal('total_price', 12, 2);
@@ -42,25 +37,22 @@ return new class extends Migration
 
             // --- Guest Contact Information ---
             $table->string('contact_name');
-            $table->string('contact_phone', 20)->nullable(); // Make nullable as per model fillable
+            $table->string('contact_phone', 20)->nullable();
             $table->string('contact_email');
 
             // --- Booking Status & Tracking ---
-            // PENJELASAN: Status 'confirmed' dan 'pending' akan kita gunakan untuk menghitung slot yang terisi.
-            // PERBAIKAN: Tambahkan 'initiated', 'challenge' (dari Midtrans), 'failed', 'expired' untuk konsistensi dengan model Payment.
             $table->string('snap_token')->nullable();
+            // --- UPDATED ENUM VALUES ---
             $table->enum('status', ['pending', 'confirmed', 'rejected', 'cancelled', 'completed', 'challenge', 'expired', 'failed'])->default('pending');
-            $table->timestamp('booking_date')->useCurrent(); // Default to current timestamp
+            $table->timestamp('booking_date')->useCurrent();
 
             // --- Admin & Confirmation/Rejection/Cancellation Tracking ---
             $table->text('admin_notes')->nullable();
             $table->timestamp('confirmed_at')->nullable();
-            // PERBAIKAN: Pastikan referensi ke tabel users dengan id_user.
             $table->string('confirmed_by')->nullable();
             $table->foreign('confirmed_by')->references('id_user')->on('users')->onDelete('set null');
 
             $table->timestamp('rejected_at')->nullable();
-            // PERBAIKAN: Pastikan referensi ke tabel users dengan id_user.
             $table->string('rejected_by')->nullable();
             $table->foreign('rejected_by')->references('id_user')->on('users')->onDelete('set null');
             $table->text('rejection_reason')->nullable();
@@ -68,14 +60,17 @@ return new class extends Migration
             $table->timestamp('cancelled_at')->nullable();
             $table->text('cancellation_reason')->nullable();
             $table->string('qr_validation_token', 64)->unique()->nullable();
+            // --- NEW: COMPLETED STATUS TRACKING ---
+            $table->timestamp('completed_at')->nullable(); // Add this line
+            $table->string('completed_by')->nullable(); // This was already there, ensure correct placement
+            $table->foreign('completed_by')->references('id_user')->on('users')->onDelete('set null');
+            // --- END NEW ---
+
             $table->timestamps(); // created_at dan updated_at
 
-            // --- Indexes untuk Performa ---
-            $table->index(['id_user', 'status']); // Untuk mencari booking user
-            $table->index(['id_room', 'status']); // Untuk mencari booking berdasarkan kamar & status
-
-            // PENJELASAN: Ini adalah index paling PENTING untuk logika slot.
-            // Ini akan mempercepat query pengecekan ketersediaan slot pada rentang tanggal tertentu.
+            // --- Indexes for Performance ---
+            $table->index(['id_user', 'status']);
+            $table->index(['id_room', 'status']);
             $table->index(['id_room', 'check_in_date', 'check_out_date', 'status'], 'bookings_availability_index');
         });
     }

@@ -54,7 +54,7 @@ class Payment extends Model
     {
         $statusLabels = [
             'pending'   => 'Menunggu Pembayaran',
-            'completed' => 'Pembayaran Berhasil',
+            'paid' => 'Pembayaran Berhasil',
             'failed'    => 'Pembayaran Gagal',
             'cancelled' => 'Pembayaran Dibatalkan',
             'expired'   => 'Pembayaran Kadaluarsa',
@@ -71,7 +71,7 @@ class Payment extends Model
     {
         $statusClasses = [
             'pending'   => 'badge-warning',
-            'completed' => 'badge-success',
+            'paid' => 'badge-success',
             'failed'    => 'badge-danger',
             'cancelled' => 'badge-secondary',
             'expired'   => 'badge-danger',
@@ -94,7 +94,7 @@ class Payment extends Model
      */
     public function scopeSuccessful($query)
     {
-        return $query->where('status', 'completed');
+        return $query->where('status', 'paid');
     }
 
     /**
@@ -118,7 +118,7 @@ class Payment extends Model
      */
     public function isSuccessful(): bool
     {
-        return $this->status === 'completed';
+        return $this->status === 'paid';
     }
 
     /**

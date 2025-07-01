@@ -246,7 +246,7 @@ class PaymentController extends Controller
             }
 
             // Prevent double processing if status is already final
-            if (in_array($payment->status, ['completed', 'failed', 'cancelled', 'expired', 'rejected'])) {
+            if (in_array($payment->status, ['paid', 'failed', 'cancelled', 'expired', 'rejected'])) {
                 Log::info("Notification for order_id: {$orderId} already processed with status: {$payment->status}");
                 return response()->json(['message' => 'Notification already processed.'], 200);
             }
@@ -261,11 +261,11 @@ class PaymentController extends Controller
                         $newPaymentStatus = 'challenge';
                         $newBookingStatus = 'challenge'; // Booking also becomes challenge
                     } else if ($fraudStatus == 'accept') {
-                        $newPaymentStatus = 'completed';
-                        $newBookingStatus = 'confirmed'; // Booking confirmed if payment completed
+                        $newPaymentStatus = 'paid';
+                        $newBookingStatus = 'confirmed'; // Booking confirmed if payment paid
                     }
                 } elseif ($transactionStatus == 'settlement') {
-                    $newPaymentStatus = 'completed';
+                    $newPaymentStatus = 'paid';
                     $newBookingStatus = 'confirmed'; // Booking confirmed
                 } elseif ($transactionStatus == 'pending') {
                     $newPaymentStatus = 'pending';

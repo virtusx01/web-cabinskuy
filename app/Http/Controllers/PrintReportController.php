@@ -14,25 +14,25 @@ class PrintReportController extends Controller
 {
     /**
      * Menampilkan halaman laporan keuangan dalam format HTML.
-     * Mengambil data pembayaran yang berstatus 'completed' sebagai pendapatan.
+     * Mengambil data pembayaran yang berstatus 'paid' sebagai pendapatan.
      */
     public function financial(Request $request)
     {
         $month = $request->input('month', now()->month);
         $year = $request->input('year', now()->year);
 
-        // Ambil semua pembayaran yang berstatus 'completed' untuk bulan dan tahun yang dipilih
-        $completedPayments = Payment::whereMonth('created_at', $month)
+        // Ambil semua pembayaran yang berstatus 'paid' untuk bulan dan tahun yang dipilih
+        $paidPayments = Payment::whereMonth('created_at', $month)
             ->whereYear('created_at', $year)
-            ->where('status', 'completed')
+            ->where('status', 'paid')
             ->orderBy('created_at', 'asc')
             ->get();
 
         // Hitung total pendapatan
-        $totalIncome = $completedPayments->sum('amount');
+        $totalIncome = $paidPayments->sum('amount');
 
         // Siapkan data detail transaksi untuk ditampilkan
-        $detailedTransactions = $completedPayments->map(function ($payment) {
+        $detailedTransactions = $paidPayments->map(function ($payment) {
             return [
                 'date' => Carbon::parse($payment->created_at)->format('d-m-Y H:i'),
                 'description' => 'Pembayaran Booking #' . $payment->id_booking,
@@ -83,15 +83,15 @@ class PrintReportController extends Controller
         $month = $request->input('month', now()->month);
         $year = $request->input('year', now()->year);
 
-        $completedPayments = Payment::whereMonth('created_at', $month)
+        $paidPayments = Payment::whereMonth('created_at', $month)
             ->whereYear('created_at', $year)
-            ->where('status', 'completed')
+            ->where('status', 'paid')
             ->orderBy('created_at', 'asc')
             ->get();
 
-        $totalIncome = $completedPayments->sum('amount');
+        $totalIncome = $paidPayments->sum('amount');
 
-        $detailedTransactions = $completedPayments->map(function ($payment) {
+        $detailedTransactions = $paidPayments->map(function ($payment) {
             return [
                 'date' => Carbon::parse($payment->created_at)->format('d-m-Y H:i'),
                 'description' => 'Pembayaran Booking #' . $payment->id_booking,

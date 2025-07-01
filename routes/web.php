@@ -100,6 +100,7 @@ Route::middleware(['auth', 'role:admin,superadmin'])->prefix('admin')->name('adm
     Route::post('/bookings/{booking}/reject', [\App\Http\Controllers\Admin\AdminBookingController::class, 'reject'])->name('bookings.reject');
     Route::post('/bookings/{booking}/cancel', [\App\Http\Controllers\Admin\AdminBookingController::class, 'cancel'])->name('bookings.cancel');
 
+Route::post('bookings/{booking}/complete', [\App\Http\Controllers\Admin\AdminBookingController::class, 'complete'])->name('bookings.complete');
     // Reports
     Route::get('/reports/financial', [PrintReportController::class, 'financial'])->name('reports.financial');
     Route::get('/reports/booking', [PrintReportController::class, 'booking'])->name('reports.booking');
