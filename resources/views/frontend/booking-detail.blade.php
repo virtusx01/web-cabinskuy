@@ -179,9 +179,20 @@
         .cabin-room-details ul li {
             margin-bottom: 5px;
         }
+.qr-code-section a{
+    align-items: center; /* Vertical centering */
+    justify-content: center; /* Horizontal centering */
+    text-align: center;
+}
 
+.btn btn-primary btn-disabled{
+    background: transparent !important;
+}.btn btn-primary btn-disabled ::before{
+    background: transparent !important;
+}
         /* === MODIFIED STYLES FOR UNIFORM BUTTONS === */
-        .action-buttons {
+        /* === MODIFIED STYLES FOR UNIFORM BUTTONS === */
+.action-buttons {
     margin-top: 25px;
     display: flex;
     gap: 15px;
@@ -241,6 +252,12 @@
     font-weight: inherit; /* Inherit font weight */
     cursor: pointer; /* Ensure cursor is pointer */
     transition: inherit; /* Inherit transition from parent */
+    
+    /* CRUCIAL: Ensure inner button also uses flexbox for perfect centering */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 /* === PRIMARY BUTTON STYLES === */
@@ -295,7 +312,7 @@
 
 .btn-secondary:hover {
     border-color: rgba(255, 255, 255, 0.3);
-    color:grey !important;
+    color: grey !important;
 }
 
 .btn-secondary:hover::before {
@@ -364,14 +381,37 @@
         flex-direction: column; /* Stack vertically */
         align-items: stretch; /* Make them fill the width */
         gap: 12px; /* Adjust gap for stacked buttons */
+        /* Pastikan container tetap center */
+        justify-content: center;
     }
     
     .action-buttons > a,
     .action-buttons > form {
-        width: 100%; /* Ensure full width on mobile */
-        max-width: none; /* Remove max-width constraint on mobile */
-        min-width: unset; /* Remove min-width constraint on mobile */
-        padding: 14px 20px; /* Slightly larger padding for mobile */
+        /* Reset flex properties untuk mobile stack */
+        flex-grow: 0;
+        flex-basis: auto;
+        min-width: unset; /* Remove min-width restriction */
+        max-width: unset; /* Remove max-width restriction */
+        width: 100%; /* Full width on mobile */
+        
+        /* Maintain centering */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        
+        /* Consistent padding for mobile */
+        padding: 14px 20px;
+    }
+
+    /* Ensure inner buttons maintain perfect centering on mobile */
+    .action-buttons > form > .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        width: 100%;
+        height: 100%;
     }
 
     /* Reduce animation intensity on mobile for better performance */
@@ -420,7 +460,7 @@
 
                     <div class="detail-item">
                         <strong>Invoice:</strong>
-                        <span class="">
+                        <span>
                             {{ $booking->latestPayment->transaction_id ?? 'Belum Ada Invoice' }}
                         </span>
                     </div>

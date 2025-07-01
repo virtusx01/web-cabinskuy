@@ -116,7 +116,7 @@ class PaymentController extends Controller
 
             // If no pending payment exists, or a new one was forced, create a new transaction
             if (!$payment) {
-                $midtransOrderId = $booking->id_booking . Str::random(5) . time(); // More descriptive order ID
+                $midtransOrderId = Str::random(7) . time(); // More descriptive order ID
 
                 $payment = Payment::create([
                     'id_booking'     => $booking->id_booking,
