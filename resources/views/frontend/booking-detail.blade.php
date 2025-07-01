@@ -179,7 +179,7 @@
         .cabin-room-details ul li {
             margin-bottom: 5px;
         }
-.qr-code-section a{
+.qr-code-section{
     align-items: center; /* Vertical centering */
     justify-content: center; /* Horizontal centering */
     text-align: center;
