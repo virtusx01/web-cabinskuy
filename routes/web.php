@@ -17,6 +17,7 @@ use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\QRCodeController;
+use App\Http\Controllers\ResetPasswordController;
 
 /*
 |--------------------------------------------------------------------------
@@ -131,3 +132,9 @@ Route::get('/api/qr/validate/{token}', [QRCodeController::class, 'validateQRCode
 
 // ROUTE BARU UNTUK DOWNLOAD PDF VALIDASI
 Route::get('/qr/validate/{token}/pdf', [QRCodeController::class, 'downloadValidationPDF'])->name('qr.validation.pdf');
+
+//resetpassword
+Route::get('forgot-password', [ResetPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('forgot-password', [ResetPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('reset-password', [ResetPasswordController::class, 'resetPassword'])->name('password.update');

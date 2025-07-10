@@ -464,7 +464,7 @@
                 <div class="form-group">
                     <div class="label-group">
                         <label for="password">Password</label>
-                        <a href="#" class="form-link">Forgot Password?</a>
+                        <a href="{{ route('password.request') }}" class="form-link">Forgot Password?</a>
                     </div>
                     <input type="password" name="password" id="password"
                         class="form-control @error('password') is-invalid @enderror" placeholder="Type your Password" required>
