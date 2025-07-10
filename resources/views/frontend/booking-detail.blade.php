@@ -605,7 +605,7 @@
                     </div>
                 @else
                     {{-- Optional: Display a message if no QR code is available --}}
-                    <p>QR Code akan tersedia setelah booking dikonfirmasi dan pembayaran selesai.</p>
+                    <p>QR Code akan tersedia setelah booking dikonfirmasi</p>
                 @endif
 
                 <div class="action-buttons">

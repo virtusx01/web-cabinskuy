@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Http\Controllers\Admin; // Pastikan namespace sesuai dengan struktur folder Anda
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\CabinRoom;
-use App\Models\User; // Untuk relasi confirmed_by, rejected_by
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 
 class AdminBookingController extends Controller
@@ -92,13 +93,13 @@ class AdminBookingController extends Controller
     {
         // Pastikan hanya admin atau superadmin yang bisa melakukan ini
         $user = Auth::user();
-        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) { // <--- PERBAIKAN DI SINI
+        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) {
             abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melakukan aksi ini.');
         }
 
         try {
             // Gunakan id_user sebagai id_admin karena foreign key di users menggunakan id_user
-            if ($booking->confirm($user->id_user, $request->admin_notes)) { // <--- Gunakan $user->id_user
+            if ($booking->confirm($user->id_user, $request->admin_notes)) {
                 return redirect()->back()->with('success', 'Booking berhasil dikonfirmasi.');
             } else {
                 return redirect()->back()->withErrors(['error' => 'Booking tidak dapat dikonfirmasi (mungkin statusnya sudah berubah atau sudah dibayar).']);
@@ -110,13 +111,122 @@ class AdminBookingController extends Controller
     }
 
     /**
+     * Manual confirmation by admin when payment gateway callback fails.
+     * This method allows admin to confirm booking and automatically update payment status.
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Models\Booking $booking
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function confirmBookingManually(Request $request, Booking $booking)
+    {
+        // Pastikan hanya admin atau superadmin yang bisa melakukan ini
+        $user = Auth::user();
+        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) {
+            abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melakukan aksi ini.');
+        }
+
+        // Validasi input
+        $request->validate([
+            'admin_notes' => 'nullable|string|max:1000',
+            'payment_method' => 'nullable|string|max:50',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Update booking status to confirmed
+            $booking->update([
+                'status' => 'confirmed',
+                'admin_notes' => $request->admin_notes,
+                'confirmed_by' => $user->id_user,
+                'confirmed_at' => now()
+            ]);
+
+            Log::info("Admin {$user->name} (ID: {$user->id_user}) manually confirmed booking #{$booking->id_booking}");
+
+            // Update latest payment to paid
+            $this->updateLatestPaymentToPaid($booking, $request->payment_method);
+
+            DB::commit();
+
+            // Return redirect response
+            return redirect()->back()->with('success', "Booking #{$booking->id_booking} berhasil dikonfirmasi secara manual dan status pembayaran diperbarui menjadi 'paid'");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error manually confirming booking #{$booking->id_booking}: " . $e->getMessage());
+            
+            return redirect()->back()->withErrors(['error' => 'Gagal mengkonfirmasi booking: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Update latest payment status to 'paid' when booking is confirmed manually.
+     *
+     * @param \App\Models\Booking $booking
+     * @param string|null $paymentMethod
+     * @return bool
+     */
+    private function updateLatestPaymentToPaid(Booking $booking, $paymentMethod = null)
+    {
+        try {
+            // Get the latest payment for this booking that's not already paid
+            $latestPayment = $booking->payments()
+                ->whereNotIn('status', ['paid', 'failed', 'cancelled', 'expired'])
+                ->latest()
+                ->first();
+
+            if ($latestPayment) {
+                $latestPayment->update([
+                    'status' => 'paid',
+                    'payment_method' => $paymentMethod ?? $latestPayment->payment_method ?? 'manual_confirmation',
+                    'payment_details' => array_merge(
+                        (array) $latestPayment->payment_details,
+                        [
+                            'manual_confirmation' => true,
+                            'confirmed_by_admin' => Auth::user()->name,
+                            'confirmed_at' => now()->toISOString()
+                        ]
+                    ),
+                    'updated_at' => now()
+                ]);
+                
+                Log::info("Payment #{$latestPayment->id_payment} for booking #{$booking->id_booking} updated to 'paid' status after manual admin confirmation.");
+                return true;
+            } else {
+                // If no payment exists, create a new one
+                $payment = \App\Models\Payment::create([
+                    'id_booking' => $booking->id_booking,
+                    'amount' => $booking->total_price,
+                    'transaction_id' => 'MANUAL-' . time() . '-' . $booking->id_booking,
+                    'status' => 'paid',
+                    'payment_method' => $paymentMethod ?? 'manual_confirmation',
+                    'id_user' => $booking->id_user,
+                    'payment_details' => [
+                        'manual_confirmation' => true,
+                        'confirmed_by_admin' => Auth::user()->name,
+                        'confirmed_at' => now()->toISOString()
+                    ]
+                ]);
+                
+                Log::info("New payment #{$payment->id_payment} created for booking #{$booking->id_booking} with 'paid' status after manual admin confirmation.");
+                return true;
+            }
+        } catch (\Exception $e) {
+            Log::error("Error updating payment status to paid for booking #{$booking->id_booking}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Menolak booking.
      */
     public function reject(Request $request, Booking $booking)
     {
         // Pastikan hanya admin atau superadmin yang bisa melakukan ini
         $user = Auth::user();
-        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) { // <--- PERBAIKAN DI SINI
+        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) {
             abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melakukan aksi ini.');
         }
 
@@ -126,7 +236,7 @@ class AdminBookingController extends Controller
 
         try {
             // Gunakan id_user sebagai id_admin
-            if ($booking->reject($user->id_user, $request->rejection_reason, $request->admin_notes)) { // <--- Gunakan $user->id_user
+            if ($booking->reject($user->id_user, $request->rejection_reason, $request->admin_notes)) {
                 return redirect()->back()->with('success', 'Booking berhasil ditolak.');
             } else {
                 return redirect()->back()->withErrors(['error' => 'Booking tidak dapat ditolak (mungkin statusnya sudah berubah).']);
@@ -141,7 +251,7 @@ class AdminBookingController extends Controller
     {
         // Ensure only authenticated admins can complete a booking
         $user = Auth::user();
-        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) { // <--- PERBAIKAN DI SINI
+        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) {
             abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melakukan aksi ini.');
         }
 
@@ -150,19 +260,7 @@ class AdminBookingController extends Controller
             'admin_notes' => 'nullable|string|max:1000',
         ]);
 
-        $adminId = Auth::id(); // Get the ID of the logged-in admin
-
-        if ($booking->complete($user->id_user,$request->admin_notes)) {
-            // Logic to update room availability for the current day or remaining days
-            // If a booking is completed, the room becomes available immediately for the rest of the original booking period.
-            // This is a crucial part for managing slot availability.
-            
-            // Example: Mark the room as available for the remaining nights from today
-            // However, the check-in/check-out date range logic in your `scopeActiveOnDateRange`
-            // already excludes 'completed' bookings. So, simply changing the status to 'completed'
-            // in the booking record will automatically free up the slot for future checks.
-            // No explicit 'increase_available_slots' is typically needed for each room day.
-
+        if ($booking->complete($user->id_user, $request->admin_notes)) {
             return redirect()->route('admin.bookings.show', $booking->id_booking)->with('success', 'Booking berhasil ditandai sebagai selesai (Completed).');
         } else {
             return redirect()->back()->with('error', 'Booking tidak dapat ditandai sebagai selesai pada saat ini. Pastikan status booking sudah dikonfirmasi dan tanggal check-in sudah tiba atau terlewati.');
@@ -176,7 +274,7 @@ class AdminBookingController extends Controller
     {
         // Pastikan hanya admin atau superadmin yang bisa melakukan ini
         $user = Auth::user();
-        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) { // <--- PERBAIKAN DI SINI
+        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) {
             abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melakukan aksi ini.');
         }
 
@@ -185,13 +283,11 @@ class AdminBookingController extends Controller
         ]);
 
         try {
-            // Anda bisa menambahkan 'admin_notes' ke fungsi cancel di model Booking jika diperlukan
-            // Atau update langsung di sini seperti yang sudah Anda lakukan sebelumnya
             if ($booking->update([
                 'status' => 'cancelled',
                 'cancelled_at' => now(),
                 'cancellation_reason' => $request->cancellation_reason,
-                'admin_notes' => $request->admin_notes, // Catatan admin untuk pembatalan
+                'admin_notes' => $request->admin_notes,
             ])) {
                 return redirect()->back()->with('success', 'Booking berhasil dibatalkan oleh admin.');
             } else {
@@ -210,7 +306,7 @@ class AdminBookingController extends Controller
     {
         // Pastikan hanya owner (superadmin) yang bisa menghapus permanen
         $user = Auth::user();
-        if (!$user || $user->role !== 'superadmin') { // <--- PERBAIKAN DI SINI, HANYA SUPERADMIN
+        if (!$user || $user->role !== 'superadmin') {
             abort(403, 'Akses ditolak. Hanya owner yang dapat menghapus booking secara permanen.');
         }
 

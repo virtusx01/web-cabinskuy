@@ -156,6 +156,8 @@
     .btn-primary:hover { background-color: #0056b3; }
     .btn-info { background-color: var(--info-color); color: white; }
     .btn-info:hover { background-color: #138496; }
+    .btn-warning { background-color: var(--warning-color); color: var(--text-dark); }
+    .btn-warning:hover { background-color: #e0a800; }
 
     /* Table styles */
     .table {
@@ -277,7 +279,8 @@
     }
 
     .modal-content textarea,
-    .modal-content input[type="text"] {
+    .modal-content input[type="text"],
+    .modal-content select {
         width: calc(100% - 20px); /* Adjusted width */
         padding: 10px;
         margin-bottom: 15px;
@@ -330,6 +333,13 @@
     @keyframes slideIn {
         from { transform: translateY(-30px); opacity: 0; }
         to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Alert box for manual confirmation */
+    .alert-info {
+        color: #0c5460;
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
     }
 </style>
 @endpush
@@ -468,7 +478,7 @@
                                 <td data-label="Jumlah">Rp {{ number_format($payment->amount, 0, ',', '.') }}</td>
                                 <td data-label="Metode">{{ $payment->payment_method }}</td>
                                 <td data-label="ID Transaksi">{{ $payment->transaction_id ?? '-' }}</td>
-                                <td data-label="Status"><span class="status-badge {{ $payment->status == 'completed' || $payment->status == 'settlement' ? 'bg-success' : ($payment->status == 'pending' ? 'bg-warning' : 'bg-danger') }}">{{ ucfirst($payment->status) }}</span></td>
+                                <td data-label="Status"><span class="status-badge {{ $payment->status == 'paid' || $payment->status == 'settlement' ? 'bg-success' : ($payment->status == 'pending' ? 'bg-warning' : 'bg-danger') }}">{{ ucfirst($payment->status) }}</span></td>
                                 <td data-label="Tanggal">{{ \Carbon\Carbon::parse($payment->created_at)->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</td>
                             </tr>
                             @endforeach
@@ -482,7 +492,7 @@
 
         <div class="card action-buttons">
             @if ($booking->status === 'pending')
-                <button class="btn btn-success" onclick="openModal('confirmModal')">Konfirmasi Booking</button>
+                <button class="btn btn-warning" onclick="openModal('manualConfirmModal')">Konfirmasi</button>
                 <button class="btn btn-danger" onclick="openModal('rejectModal')">Tolak Booking</button>
             @endif
             {{-- Allow cancellation for pending, challenge, or confirmed bookings --}}
@@ -518,17 +528,34 @@
 </div>
 
 {{-- Confirm Modal --}}
-<div id="confirmModal" class="modal-overlay">
+
+{{-- Manual Confirm Modal (NEW) --}}
+<div id="manualConfirmModal" class="modal-overlay">
     <div class="modal-content">
-        <span class="modal-close-btn" onclick="closeModal('confirmModal')">&times;</span>
-        <h3>Konfirmasi Booking</h3>
-        <form action="{{ route('admin.bookings.confirm', $booking->id_booking) }}" method="POST">
+        <span class="modal-close-btn" onclick="closeModal('manualConfirmModal')">&times;</span>
+        <h3>Konfirmasi</h3>
+        <div class="alert alert-info">
+            <strong>Perhatian:</strong> Fitur ini akan mengkonfirmasi booking dan secara otomatis mengupdate status pembayaran menjadi 'paid'. Gunakan ketika payment gateway callback gagal atau untuk konfirmasi pembayaran offline.
+        </div>
+        <form action="{{ route('admin.bookings.confirm-manually', $booking->id_booking) }}" method="POST">
             @csrf
-            <label for="confirm_admin_notes">Catatan Admin (Opsional):</label>
-            <textarea id="confirm_admin_notes" name="admin_notes" rows="4"></textarea>
+            <label for="manual_admin_notes">Catatan Admin (Opsional):</label>
+            <textarea id="manual_admin_notes" name="admin_notes" rows="4" placeholder="Catatan admin tentang konfirmasi manual ini..."></textarea>
+            
+            <label for="manual_payment_method">Metode Pembayaran:</label>
+            <select id="manual_payment_method" name="payment_method">
+                <option value="manual_confirmation">Konfirmasi Manual</option>
+                <option value="bank_transfer">Transfer Bank</option>
+                <option value="cash">Tunai</option>
+                <option value="credit_card">Kartu Kredit</option>
+                <option value="debit_card">Kartu Debit</option>
+                <option value="e_wallet">E-Wallet</option>
+                <option value="other">Lainnya</option>
+            </select>
+            
             <div class="modal-buttons">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('confirmModal')">Batal</button>
-                <button type="submit" class="btn btn-success">Konfirmasi</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('manualConfirmModal')">Batal</button>
+                <button type="submit" class="btn btn-warning">Konfirmasi Manual</button>
             </div>
         </form>
     </div>

@@ -292,6 +292,11 @@ class PaymentController extends Controller
                     if ($booking->status !== $newBookingStatus) {
                         $booking->update(['status' => $newBookingStatus]);
                         Log::info("Booking #{$booking->id_booking} status updated to '{$newBookingStatus}' from Midtrans webhook.");
+                        
+                        // PERBAIKAN: Update payment status menjadi 'paid' jika booking confirmed
+                        if ($newBookingStatus === 'confirmed') {
+                            $this->updateLatestPaymentToPaid($booking);
+                        }
                     }
                 }
             });
@@ -305,6 +310,40 @@ class PaymentController extends Controller
                 'request_payload' => $request->all(), // Log entire request payload
             ]);
             return response()->json(['error' => 'Internal Server Error'], 500);
+        }
+    }
+
+    /**
+     * Update latest payment status to 'paid' when booking is confirmed.
+     *
+     * @param \App\Models\Booking $booking
+     * @return bool
+     */
+    private function updateLatestPaymentToPaid(Booking $booking)
+    {
+        try {
+            // Get the latest payment for this booking that's not already paid
+            $latestPayment = $booking->payments()
+                ->whereNotIn('status', ['paid', 'failed', 'cancelled', 'expired'])
+                ->latest()
+                ->first();
+
+            if ($latestPayment) {
+                $latestPayment->update([
+                    'status' => 'paid',
+                    'payment_method' => $latestPayment->payment_method ?? 'manual_confirmation',
+                    'updated_at' => now()
+                ]);
+                
+                Log::info("Payment #{$latestPayment->id_payment} for booking #{$booking->id_booking} updated to 'paid' status after booking confirmation.");
+                return true;
+            } else {
+                Log::warning("No pending payment found for booking #{$booking->id_booking} to update to 'paid' status.");
+                return false;
+            }
+        } catch (\Exception $e) {
+            Log::error("Error updating payment status to paid for booking #{$booking->id_booking}: " . $e->getMessage());
+            return false;
         }
     }
 

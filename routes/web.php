@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\AdminBookingController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
@@ -17,7 +16,7 @@ use App\Http\Controllers\PrintReportController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\QRCodeController; // Make sure this is imported
+use App\Http\Controllers\QRCodeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -99,8 +98,11 @@ Route::middleware(['auth', 'role:admin,superadmin'])->prefix('admin')->name('adm
     Route::post('/bookings/{booking}/confirm', [\App\Http\Controllers\Admin\AdminBookingController::class, 'confirm'])->name('bookings.confirm');
     Route::post('/bookings/{booking}/reject', [\App\Http\Controllers\Admin\AdminBookingController::class, 'reject'])->name('bookings.reject');
     Route::post('/bookings/{booking}/cancel', [\App\Http\Controllers\Admin\AdminBookingController::class, 'cancel'])->name('bookings.cancel');
+    Route::post('/bookings/{booking}/complete', [\App\Http\Controllers\Admin\AdminBookingController::class, 'complete'])->name('bookings.complete');
+    
+    // NEW ROUTE: Manual booking confirmation with payment status update
+    Route::post('/bookings/{booking}/confirm-manually', [\App\Http\Controllers\Admin\AdminBookingController::class, 'confirmBookingManually'])->name('bookings.confirm-manually');
 
-Route::post('bookings/{booking}/complete', [\App\Http\Controllers\Admin\AdminBookingController::class, 'complete'])->name('bookings.complete');
     // Reports
     Route::get('/reports/financial', [PrintReportController::class, 'financial'])->name('reports.financial');
     Route::get('/reports/booking', [PrintReportController::class, 'booking'])->name('reports.booking');

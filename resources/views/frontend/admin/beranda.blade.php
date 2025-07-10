@@ -577,7 +577,7 @@
                         @forelse ($recentBookings as $booking)
                         <tr>
                             <td>{{ $booking->id_booking }}</td>
-                            <td>{{ $booking->room?->cabin?->cabin_name ?? 'Kabin Dihapus' }}</td>
+                            <td>{{ $booking->room?->cabin?->name ?? 'Kabin Dihapus' }}</td>
                             <td>{{ $booking->room?->typeroom ?? 'Tipe Kamar Dihapus' }}</td>
                             <td>{{ $booking->user?->name ?? 'Pengguna Dihapus' }}</td>
                             <td>{{ \Carbon\Carbon::parse($booking->check_in_date)->format('d M Y') }}</td>
