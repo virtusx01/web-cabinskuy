@@ -297,6 +297,14 @@
             justify-content: end;
         }
 
+        #lang-id:hover{
+            background: var(--gradient-primary);
+            color: white;
+        }#lang-en:hover{
+            background: var(--gradient-primary);
+            color: white;
+        }
+
 
         .lang-btn.active {
             background: var(--gradient-primary);
@@ -606,7 +614,6 @@
             :root {
                 --header-height: 72px;
             }
-
             .navbar-container {
                 padding: 0 16px;
             }
@@ -635,6 +642,8 @@
                 opacity: 1;
                 pointer-events: all;
                 align-items: center; 
+                background-color: var(--light-green);
+                border: none;
             }
 
             .navbar-burger {
@@ -647,7 +656,6 @@
                 gap: 30px;
                 margin-bottom: 24px;
                 padding-bottom: 24px;
-                border-bottom: 1px solid var(--border-light);
                 text-align: center;
             }
 
@@ -814,13 +822,6 @@
                 <div class="navbar-auth">
                     @auth
                         @if(Auth::user()->isCustomer())
-                            <a href="{{ route('profile.user.edit') }}" class="profile-info {{ request()->routeIs('profile.user.*') ? 'active' : '' }}">
-                                <div class="profile-picture"
-                                    style="background-image: url('{{ Auth::user()->profile_photo_path ? asset('storage/' . Auth::user()->profile_photo_path) : asset('backend/images/default-avatar.png') }}');">
-                                </div>
-                                <span class="profile-name">{{ Auth::user()->name }}</span>
-                            </a>
-                        @else
                             <a href="{{ route('profile.user.show') }}" class="profile-info {{ request()->routeIs('profile.user.*') ? 'active' : '' }}">
                                 <div class="profile-picture"
                                     style="background-image: url('{{ Auth::user()->profile_photo_path ? asset('storage/' . Auth::user()->profile_photo_path) : asset('backend/images/default-avatar.png') }}');">
@@ -838,8 +839,8 @@
                     @endauth
                 </div>
                 <div class="navbar-lang-switcher">
-                    <button class="lang-btn" data-lang="en">EN</button>
-                    <button class="lang-btn" data-lang="id">ID</button>
+                    <button class="lang-btn" id="lang-en" data-lang="en">EN</button>
+                    <button class="lang-btn" id="lang-id" data-lang="id">ID</button>
                 </div>
             </div>
         </div>
@@ -900,7 +901,7 @@
     <div id="loginModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalMessage">
         <div class="modal-content">
             <h3 id="modalTitle">Anda Belum Login</h3>
-            <p id="modalMessage">Untuk melihat pemesanan Anda, silakan login terlebih dahulu.</p>
+            <p id="modalMessage">Untuk melanjutkan, silakan login terlebih dahulu.</p>
             <div class="modal-buttons">
                 <button class="modal-button cancel" id="cancelLogin" type="button">Batal</button>
                 <button class="modal-button ok" id="confirmLogin" type="button">Oke</button>
@@ -936,7 +937,7 @@
                 footer_address: "Jl. Alam Asri No. 123,<br>Bandung, Indonesia",
                 footer_phone: "+6281574422949", // Updated phone number
                 footer_email: "halo@cabinskuy.com",
-                footer_copyright: "© 2025 Cabinskuy. All rights reserved.", // Updated year dynamically
+                footer_copyright: "© 2025 Cabinskuy. All rights reserved. Created by Muhammad Nur Fauzan", // Updated year dynamically
 
                 // Homepage Content (from your provided example for reference)
                 hero_title: "Live Out The Adventure With Cabinskuy",
@@ -997,7 +998,7 @@
                 step4_title: "Check-in and Enjoy!",
                 step4_desc: "Arrive at your cabin, check-in seamlessly, and start your unforgettable getaway.",
                 modal_title: "You are not logged in",
-                modal_message: "To view your bookings, please log in first.",
+                modal_message: "To continue, please log in first.",
                 modal_cancel: "Cancel",
                 modal_ok: "Ok"
             },
@@ -1026,7 +1027,7 @@
                 footer_address: "Jl. Alam Asri No. 123,<br>Bandung, Indonesia",
                 footer_phone: "+6281574422949", // Updated phone number
                 footer_email: "halo@cabinskuy.com",
-                footer_copyright: "© 2025 Cabinskuy. Hak Cipta Dilindungi.", // Updated year dynamically
+                footer_copyright: "© 2025 Cabinskuy. Hak Cipta Dilindungi. Buatan Muhammad Nur Fauzan", // Updated year dynamically
 
                 // Homepage Content (from your provided example for reference)
                 hero_title: "Wujudkan Petualangan Bersama Cabinskuy",
@@ -1040,7 +1041,7 @@
                 all_regencies: "Semua Kabupaten/Kota",
                 checkin_label: "Check In",
                 checkout_label: "Check Out",
-                guests_label: "Tamu",
+                guests_label: "Jumlah Tamu:",
                 guest: "Tamu", // Singular
                 guests: "Tamu", // Plural (assuming 'Tamu' is singular and plural in ID)
                 search_btn: "Cari",
@@ -1087,7 +1088,7 @@
                 step4_title: "Check-in dan Nikmati!",
                 step4_desc: "Tiba di kabin Anda, check-in dengan lancar, dan mulai liburan yang tak terlupakan.",
                 modal_title: "Anda Belum Login",
-                modal_message: "Untuk melihat pemesanan Anda, silakan login terlebih dahulu.",
+                modal_message: "Untuk melanjutkan, silakan login terlebih dahulu.",
                 modal_cancel: "Batal",
                 modal_ok: "Oke"
             }
@@ -1141,7 +1142,7 @@
             const modalOkBtn = document.getElementById('confirmLogin');
 
             if (modalTitle) modalTitle.textContent = translations[language].modal_title || "You are not logged in";
-            if (modalMessage) modalMessage.textContent = translations[language].modal_message || "To view your bookings, please log in first.";
+            if (modalMessage) modalMessage.textContent = translations[language].modal_message || "To continue, please log in first.";
             if (modalCancelBtn) modalCancelBtn.textContent = translations[language].modal_cancel || "Cancel";
             if (modalOkBtn) modalOkBtn.textContent = translations[language].modal_ok || "Ok";
         }
@@ -1185,8 +1186,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Updated dynamic year for footer copyright
             const currentYear = new Date().getFullYear();
-            translations.en.footer_copyright = `© ${currentYear} Cabinskuy. All rights reserved.`;
-            translations.id.footer_copyright = `© ${currentYear} Cabinskuy. Hak Cipta Dilindungi.`;
+            translations.en.footer_copyright = `© ${currentYear} Cabinskuy. Created by Muhammad Nur Fauzan. All rights reserved. `;
+            translations.id.footer_copyright = `© ${currentYear} Cabinskuy. Dibuat oleh Muhammad Nur Fauzan. Hak Cipta Dilindungi.`;
 
             // Initiate default language detection and application
             setDefaultLanguageOnLoad();

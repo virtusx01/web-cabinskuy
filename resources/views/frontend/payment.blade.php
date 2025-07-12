@@ -349,7 +349,7 @@
                     <div class="summary-room-details">
                         <h4>{{ $booking->room->typeroom ?? 'N/A' }} Kabin</h4>
                         <p>{{ $booking->cabin->name ?? 'N/A' }}</p>
-                        <p>📍 {{ $displayLocation }}</p> {{-- Updated location display --}}
+                        <p>📍 {{$booking->cabin->location_address}}, {{ $displayLocation }}</p> {{-- Updated location display --}}
                     </div>
                 </div>
 

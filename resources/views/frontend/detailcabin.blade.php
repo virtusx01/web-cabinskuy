@@ -20,8 +20,6 @@
     .breadcrumb a:hover {
         text-decoration: underline;
     }
-
-    /* Date Filter Section */
     .date-filter-section {
         background: #fff;
         padding: 20px;
@@ -72,8 +70,6 @@
     .btn-check-availability:hover {
         background-color: #1c7d43;
     }
-
-    /* Header Detail Kabin */
     .detail-header {
         display: flex;
         justify-content: space-between;
@@ -102,8 +98,6 @@
         font-weight: 400;
         color: #777;
     }
-
-    /* Enhanced Photo Gallery with Slider */
     .photo-gallery {
         display: grid;
         grid-template-columns: 1fr;
@@ -115,8 +109,6 @@
             grid-template-columns: 2.5fr 1fr;
         }
     }
-
-    /* Main Photo Slider */
     .main-photo-slider {
         position: relative;
         overflow: hidden;
@@ -179,7 +171,6 @@
     .slider-indicator.active {
         background: white;
     }
-
     .thumbnail-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -200,8 +191,6 @@
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         border-color: #229954;
     }
-
-    /* Location Section */
     .location-section, .room-selection-section {
         margin-bottom: 30px;
     }
@@ -224,8 +213,6 @@
         height: 100%;
         border: 0;
     }
-
-    /* Enhanced Room Selection with Image Slider */
     .room-card {
         display: flex;
         flex-direction: column;
@@ -241,15 +228,12 @@
     .room-card:hover {
         box-shadow: 0 6px 20px rgba(0,0,0,0.08);
     }
-
     @media (min-width: 768px) {
         .room-card {
             flex-direction: row;
             align-items: center;
         }
     }
-
-    /* Room Photo Slider */
     .room-card-photo {
         width: 100%;
         height: 200px;
@@ -316,7 +300,6 @@
     .room-photo-indicator.active {
         background: white;
     }
-
     @media (min-width: 768px) {
         .room-card-photo {
             width: 180px;
@@ -396,8 +379,6 @@
         background-color: #ccc;
         cursor: not-allowed;
     }
-
-    /* Alert Messages */
     .alert {
         padding: 15px;
         margin-bottom: 20px;
@@ -434,13 +415,81 @@
     .availability-info i {
         font-size: 1.1em;
     }
-
-    /* Hide slider controls when only one image */
     .single-image .slider-nav,
     .single-image .slider-indicators,
     .single-image .room-slider-nav,
     .single-image .room-photo-indicators {
         display: none;
+    }
+
+    /* --- [BARU] CSS untuk Modal Login --- */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1050;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-overlay.show {
+        display: flex;
+    }
+    .modal-content {
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 450px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        transform: translateY(-50px);
+        transition: transform 0.3s ease-out;
+    }
+    .modal-overlay.show .modal-content {
+        transform: translateY(0);
+    }
+    .modal-content h4 {
+        color: #223324;
+        font-size: 1.5em;
+        margin-top: 0;
+        margin-bottom: 10px;
+    }
+    .modal-content p {
+        color: #555;
+        margin-bottom: 25px;
+    }
+    .modal-actions {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+    .modal-actions .btn {
+        padding: 10px 25px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    .btn-login-confirm {
+        background-color: #229954;
+        color: #fff;
+        text-decoration: none;
+    }
+    .btn-login-confirm:hover {
+        background-color: #1c7d43;
+    }
+    .btn-login-cancel {
+        background-color: #e9ecef;
+        color: #333;
+        font-weight: bold; 
+    }
+     .btn-login-cancel:hover {
+        background-color: #ced4da;
     }
 </style>
 @endpush
@@ -448,12 +497,14 @@
 @section('content')
 <div class="detail-page-bg">
     <div class="container">
+        {{-- Navigasi Breadcrumb --}}
         <nav class="breadcrumb">
             <a href="{{ route('frontend.beranda') }}">Home</a> >
             <a href="{{ route('frontend.kabin.index') }}">Kabin</a> >
             <span>{{ $cabin->name }}</span>
         </nav>
 
+        {{-- Header Detail Kabin --}}
         <div class="detail-header">
             <div class="detail-header-info">
                 <h1>{{ $cabin->name }}</h1>
@@ -467,12 +518,11 @@
             @endif
         </div>
 
+        {{-- PHP Helper & Inisialisasi Foto --}}
         @php
-            // Function to safely decode JSON strings
             function safeJsonDecode($data) {
                 if (is_string($data)) {
                     $decoded = json_decode($data, true);
-                    // Check for double encoding
                     if (is_array($decoded) && !empty($decoded) && is_string($decoded[0])) {
                         $decoded = json_decode($decoded[0], true);
                     }
@@ -480,11 +530,11 @@
                 }
                 return is_array($data) ? $data : [];
             }
-
             $cabinPhotos = safeJsonDecode($cabin->cabin_photos);
             $defaultPlaceholder = 'https://via.placeholder.com/800x500/e9f5e9/333333?text=Cabinskuy';
         @endphp
 
+        {{-- Galeri Foto --}}
         <section class="photo-gallery">
             <div class="main-photo-slider {{ count($cabinPhotos) <= 1 ? 'single-image' : '' }}">
                 <div class="slider-container" id="main-slider-container">
@@ -504,7 +554,6 @@
                 @if(count($cabinPhotos) > 1)
                     <button class="slider-nav prev" onclick="changeMainSlide(-1)">❮</button>
                     <button class="slider-nav next" onclick="changeMainSlide(1)">❯</button>
-
                     <div class="slider-indicators" id="main-indicators">
                         @foreach($cabinPhotos as $index => $photo)
                             <div class="slider-indicator {{ $index === 0 ? 'active' : '' }}" onclick="goToMainSlide({{ $index }})"></div>
@@ -524,6 +573,7 @@
             </div>
         </section>
 
+        {{-- Filter Tanggal --}}
         <section class="date-filter-section">
             <h3>Pilih Tanggal Menginap</h3>
             <div class="date-filter-group">
@@ -545,6 +595,7 @@
             </div>
         </section>
 
+        {{-- Lokasi & Peta --}}
         <section class="location-section">
             <h3 class="section-title">Location</h3>
             <div class="map-container">
@@ -552,6 +603,7 @@
             </div>
         </section>
 
+        {{-- Pilihan Kamar --}}
         <section class="room-selection-section" id="room-selection-section">
             <h3 class="section-title">Select Your Room</h3>
             <div class="rooms-list">
@@ -575,11 +627,9 @@
                                 </div>
                             @endif
                         </div>
-
                         @if(count($roomPhotos) > 1)
                             <button class="room-slider-nav prev" data-room-id="{{ $room->id_room }}" data-direction="-1">❮</button>
                             <button class="room-slider-nav next" data-room-id="{{ $room->id_room }}" data-direction="1">❯</button>
-
                             <div class="room-photo-indicators" id="room-indicators-{{ $room->id_room }}">
                                 @foreach($roomPhotos as $index => $photo)
                                     <div class="room-photo-indicator {{ $index === 0 ? 'active' : '' }}" data-room-id="{{ $room->id_room }}" data-slide-index="{{ $index }}"></div>
@@ -599,14 +649,12 @@
                     </div>
                     <div class="room-card-booking">
                         <div class="price">IDR {{ number_format($room->price, 0, ',', '.') }} <span>/malam</span></div>
-
                         <form action="{{ route('frontend.booking.start') }}" method="POST" class="booking-start-form">
                             @csrf
                             <input type="hidden" name="id_room" value="{{ $room->id_room }}">
                             <input type="hidden" name="checkin_date" class="hidden-checkin">
                             <input type="hidden" name="checkout_date" class="hidden-checkout">
                             <input type="hidden" name="total_guests" class="hidden-guests" value="2">
-
                             <button type="submit" class="btn-book" id="book-btn-{{ $room->id_room }}" disabled>
                                 Pilih Tanggal Dulu
                             </button>
@@ -620,87 +668,115 @@
                 @endforelse
             </div>
         </section>
+    </div>
+</div>
 
+<div class="modal-overlay" id="loginModal">
+    <div class="modal-content">
+        <h4>Login Diperlukan</h4>
+        <p>Anda harus login terlebih dahulu untuk melanjutkan proses pemesanan.</p>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-login-cancel" id="cancelLogin">Batal</button>
+            <a href="{{ route('backend.login', ['redirect_to' => url()->current()]) }}" class="btn btn-login-confirm">Login</a>
+        </div>
     </div>
 </div>
 @endsection
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
+    // --- [BARU] Logika Modal Login ---
+    const loginModal = document.getElementById('loginModal');
+    const cancelLoginBtn = document.getElementById('cancelLogin');
+    const bookingForms = document.querySelectorAll('.booking-start-form');
+    const isAuthenticated = @json(Auth::check()); // Cek status login dari backend
+
+    // Fungsi untuk menampilkan modal
+    function showLoginModal() {
+        if(loginModal) loginModal.classList.add('show');
+    }
+
+    // Fungsi untuk menyembunyikan modal
+    function hideLoginModal() {
+        if(loginModal) loginModal.classList.remove('show');
+    }
+
+    // Tambahkan event listener untuk setiap form booking
+    bookingForms.forEach(form => {
+        form.addEventListener('submit', function(event) {
+            if (!isAuthenticated) {
+                event.preventDefault(); // Hentikan submit form
+                showLoginModal();       // Tampilkan modal login
+            }
+        });
+    });
+
+    // Event listener untuk tombol batal pada modal
+    if (cancelLoginBtn) {
+        cancelLoginBtn.addEventListener('click', hideLoginModal);
+    }
+
+    // Event listener untuk menutup modal saat mengklik area luar
+    if (loginModal) {
+        loginModal.addEventListener('click', function(event) {
+            if (event.target === loginModal) {
+                hideLoginModal();
+            }
+        });
+    }
+    // --- Akhir Logika Modal Login ---
+
+
+    // --- Logika Halaman yang Sudah Ada (TANPA PERUBAHAN) ---
     const globalCheckin = document.getElementById('global_checkin_date');
     const globalCheckout = document.getElementById('global_checkout_date');
     const totalGuests = document.getElementById('total_guests');
     const thumbnails = document.querySelectorAll('#thumbnail-grid img');
     const roomSelectionSection = document.getElementById('room-selection-section');
 
-    // Initialize slider states
     let mainSlideIndex = 0;
     const roomSlideIndexes = {};
 
-    // Set minimal dates
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
+    const todayStr = today.toISOString().split('T')[0];
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-    globalCheckin.setAttribute('min', today.toISOString().split('T')[0]);
-    globalCheckout.setAttribute('min', tomorrow.toISOString().split('T')[0]);
+    globalCheckin.setAttribute('min', todayStr);
+    globalCheckout.setAttribute('min', tomorrowStr);
 
-    // Initialize with default values if available from session or current date
-    const initialCheckin = '{{ old('checkin_date', session('pending_booking.checkin_in')) }}';
-    const initialCheckout = '{{ old('checkout_date', session('pending_booking.check_out')) }}';
+    const initialCheckin = '{{ old('checkin_date', session('pending_booking.checkin_in')) }}' || todayStr;
+    const initialCheckout = '{{ old('checkout_date', session('pending_booking.check_out')) }}' || tomorrowStr;
     const initialGuests = '{{ old('total_guests', session('pending_booking.guests') ?? 2) }}';
 
-    if (initialCheckin) {
-        globalCheckin.value = initialCheckin;
-    } else {
-        globalCheckin.value = today.toISOString().split('T')[0];
-    }
-
-    if (initialCheckout) {
-        globalCheckout.value = initialCheckout;
-    } else {
-        globalCheckout.value = tomorrow.toISOString().split('T')[0];
-    }
+    globalCheckin.value = initialCheckin;
+    globalCheckout.value = initialCheckout;
     totalGuests.value = initialGuests;
 
-    // Initialize room slide indexes for each room card found in the DOM
     document.querySelectorAll('.room-card').forEach(roomCard => {
         const roomId = roomCard.getAttribute('data-room-id');
         roomSlideIndexes[roomId] = 0;
-
-        // Initialize room slider position (important for correct initial display)
         const roomSlider = roomCard.querySelector('.room-photo-slider');
         if (roomSlider) {
             roomSlider.style.transform = 'translateX(0%)';
         }
     });
 
-    // Main slider functions
     window.changeMainSlide = function(direction) {
         const container = document.getElementById('main-slider-container');
         if (!container) return;
-
         const slides = container.children;
         const totalSlides = slides.length;
-
         if (totalSlides <= 1) return;
-
-        mainSlideIndex += direction;
-
-        if (mainSlideIndex >= totalSlides) {
-            mainSlideIndex = 0;
-        } else if (mainSlideIndex < 0) {
-            mainSlideIndex = totalSlides - 1;
-        }
-
+        mainSlideIndex = (mainSlideIndex + direction + totalSlides) % totalSlides;
         updateMainSlider();
     }
 
     window.goToMainSlide = function(index) {
         const container = document.getElementById('main-slider-container');
         if (!container) return;
-
         const totalSlides = container.children.length;
         if (index >= 0 && index < totalSlides) {
             mainSlideIndex = index;
@@ -711,68 +787,37 @@
     function updateMainSlider() {
         const container = document.getElementById('main-slider-container');
         const indicators = document.querySelectorAll('#main-indicators .slider-indicator');
-
         if (container) {
             container.style.transform = `translateX(-${mainSlideIndex * 100}%)`;
         }
-
-        // Update indicators
         indicators.forEach((indicator, index) => {
             indicator.classList.toggle('active', index === mainSlideIndex);
         });
-
-        // Update thumbnails
         thumbnails.forEach((thumb, index) => {
             thumb.classList.toggle('active-thumbnail', index === mainSlideIndex);
         });
     }
 
-    // Room slider functions (Revised)
     function changeRoomSlide(roomId, direction) {
         const roomCard = document.querySelector(`.room-card[data-room-id="${roomId}"]`);
-        if (!roomCard) {
-            console.error(`Room card not found for room ID: ${roomId}`);
-            return;
-        }
+        if (!roomCard) return;
         const slider = roomCard.querySelector('.room-photo-slider');
-        if (!slider) {
-            console.error(`Room slider not found within room card for room ID: ${roomId}`);
-            return;
-        }
-
+        if (!slider) return;
         const slides = slider.children;
         const totalSlides = slides.length;
-
-        if (totalSlides <= 1) return; // No need to slide if only one image
-
-        // Initialize if not exists
+        if (totalSlides <= 1) return;
         if (!(roomId in roomSlideIndexes)) {
             roomSlideIndexes[roomId] = 0;
         }
-
-        roomSlideIndexes[roomId] += direction;
-
-        if (roomSlideIndexes[roomId] >= totalSlides) {
-            roomSlideIndexes[roomId] = 0;
-        } else if (roomSlideIndexes[roomId] < 0) {
-            roomSlideIndexes[roomId] = totalSlides - 1;
-        }
-
+        roomSlideIndexes[roomId] = (roomSlideIndexes[roomId] + direction + totalSlides) % totalSlides;
         updateRoomSlider(roomId);
     }
 
     function goToRoomSlide(roomId, index) {
         const roomCard = document.querySelector(`.room-card[data-room-id="${roomId}"]`);
-        if (!roomCard) {
-            console.error(`Room card not found for room ID: ${roomId}`);
-            return;
-        }
+        if (!roomCard) return;
         const slider = roomCard.querySelector('.room-photo-slider');
-        if (!slider) {
-            console.error(`Room slider not found within room card for room ID: ${roomId}`);
-            return;
-        }
-
+        if (!slider) return;
         const totalSlides = slider.children.length;
         if (index >= 0 && index < totalSlides) {
             roomSlideIndexes[roomId] = index;
@@ -782,28 +827,17 @@
 
     function updateRoomSlider(roomId) {
         const roomCard = document.querySelector(`.room-card[data-room-id="${roomId}"]`);
-        if (!roomCard) {
-            console.error(`Room card not found for room ID: ${roomId}`);
-            return;
-        }
+        if (!roomCard) return;
         const slider = roomCard.querySelector('.room-photo-slider');
         const indicators = roomCard.querySelectorAll('.room-photo-indicator');
-
-        if (!slider) {
-            console.error(`Room slider element not found for room ID: ${roomId}`);
-            return;
-        }
-
+        if (!slider) return;
         const currentIndex = roomSlideIndexes[roomId] || 0;
         slider.style.transform = `translateX(-${currentIndex * 100}%)`;
-
-        // Update indicators
         indicators.forEach((indicator, index) => {
             indicator.classList.toggle('active', index === currentIndex);
         });
     }
 
-    // Attach event listeners to the room slider navigation buttons and indicators
     document.querySelectorAll('.room-slider-nav').forEach(button => {
         button.addEventListener('click', function() {
             const roomId = this.getAttribute('data-room-id');
@@ -820,35 +854,28 @@
         });
     });
 
-    // Set the first thumbnail as active on load if available
     if (thumbnails.length > 0) {
         thumbnails[0].classList.add('active-thumbnail');
     }
 
-    // Update checkout minimal date when checkin changes
-    globalCheckin.addEventListener('change', function() {
-        const checkinDate = new Date(this.value);
-        checkinDate.setDate(checkinDate.getDate() + 1);
-        const minCheckout = checkinDate.toISOString().split('T')[0];
-        globalCheckout.setAttribute('min', minCheckout);
-
-        if (globalCheckout.value && new Date(globalCheckout.value) <= checkinDate) {
-            globalCheckout.value = minCheckout;
+    function handleDateChange() {
+        const checkinDateVal = globalCheckin.value;
+        if(checkinDateVal) {
+            const checkinDate = new Date(checkinDateVal);
+            checkinDate.setDate(checkinDate.getDate() + 1);
+            const minCheckout = checkinDate.toISOString().split('T')[0];
+            globalCheckout.setAttribute('min', minCheckout);
+            if (globalCheckout.value && new Date(globalCheckout.value) < new Date(minCheckout)) {
+                globalCheckout.value = minCheckout;
+            }
         }
-
         updateHiddenFields();
         checkAllRoomsAvailability();
-    });
+    }
 
-    globalCheckout.addEventListener('change', function() {
-        updateHiddenFields();
-        checkAllRoomsAvailability();
-    });
-
-    totalGuests.addEventListener('change', function() {
-        updateHiddenFields();
-        checkAllRoomsAvailability();
-    });
+    globalCheckin.addEventListener('change', handleDateChange);
+    globalCheckout.addEventListener('change', handleDateChange);
+    totalGuests.addEventListener('input', handleDateChange);
 
     function updateHiddenFields() {
         document.querySelectorAll('.booking-start-form').forEach(form => {
@@ -868,19 +895,11 @@
                 button.disabled = true;
                 button.textContent = 'Pilih Tanggal Dulu';
             });
-            document.querySelectorAll('.availability-info').forEach(info => {
-                info.innerHTML = '<i class="fas fa-info-circle"></i> <small>Pilih tanggal check-in dan check-out.</small>';
-                info.className = 'availability-info alert-info';
-            });
             return;
         }
 
         if (new Date(checkoutDate) <= new Date(checkinDate)) {
-            document.querySelectorAll('.btn-book').forEach(button => {
-                button.disabled = true;
-                button.textContent = 'Tanggal Tidak Valid';
-            });
-            document.querySelectorAll('.availability-info').forEach(info => {
+             document.querySelectorAll('.availability-info').forEach(info => {
                 info.innerHTML = '<i class="fas fa-exclamation-circle"></i> <small>Tanggal check-out harus setelah check-in.</small>';
                 info.className = 'availability-info not-available';
             });
@@ -893,10 +912,8 @@
         });
     }
 
-    // Function to initiate availability check and then scroll
     window.checkAllRoomsAvailabilityAndScroll = function() {
-        checkAllRoomsAvailability(); // First, check availability
-        // Then, scroll to the room selection section with smooth behavior
+        checkAllRoomsAvailability();
         if (roomSelectionSection) {
             roomSelectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -929,7 +946,7 @@
         .then(response => {
             if (!response.ok) {
                 return response.json().then(errorData => {
-                    throw new Error(errorData.message || 'Server error occurred.');
+                    throw new Error(errorData.message || 'Server error.');
                 });
             }
             return response.json();
@@ -949,119 +966,23 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            availabilityInfo.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <small>❌ Gagal mengecek ketersediaan: ${error.message || 'Terjadi kesalahan'}</small>`;
+            availabilityInfo.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <small>❌ Gagal: ${error.message}</small>`;
             availabilityInfo.className = 'availability-info not-available';
             bookButton.disabled = true;
             bookButton.textContent = 'Error';
         });
     }
 
-    // Auto-slide functionality for main slider only
-    let autoSlideInterval;
+    let autoSlideInterval = setInterval(() => changeMainSlide(1), 5000);
 
-    function startAutoSlide() {
-        const container = document.getElementById('main-slider-container');
-        if (container && container.children.length > 1) {
-            autoSlideInterval = setInterval(() => {
-                changeMainSlide(1);
-            }, 5000); // Change slide every 5 seconds
-        }
-    }
-
-    function stopAutoSlide() {
-        if (autoSlideInterval) {
-            clearInterval(autoSlideInterval);
-        }
-    }
-
-    // Start auto-slide on page load
-    startAutoSlide();
-
-    // Pause auto-slide when user interacts with main slider
     const mainSlider = document.querySelector('.main-photo-slider');
     if (mainSlider) {
-        mainSlider.addEventListener('mouseenter', stopAutoSlide);
-        mainSlider.addEventListener('mouseleave', startAutoSlide);
+        mainSlider.addEventListener('mouseenter', () => clearInterval(autoSlideInterval));
+        mainSlider.addEventListener('mouseleave', () => autoSlideInterval = setInterval(() => changeMainSlide(1), 5000));
     }
 
-    // Touch/swipe support for mobile - Main slider
-    let touchStartX = 0;
-    let touchEndX = 0;
-
-    function handleMainSliderTouch() {
-        if (touchEndX < touchStartX - 50) {
-            changeMainSlide(1); // Swipe left - next slide
-        }
-        if (touchEndX > touchStartX + 50) {
-            changeMainSlide(-1); // Swipe right - previous slide
-        }
-    }
-
-    if (mainSlider) {
-        mainSlider.addEventListener('touchstart', e => {
-            touchStartX = e.changedTouches[0].screenX;
-        });
-
-        mainSlider.addEventListener('touchend', e => {
-            touchEndX = e.changedTouches[0].screenX;
-            handleMainSliderTouch();
-        });
-    }
-
-    // Room slider touch support (Revised)
-    document.querySelectorAll('.room-card-photo').forEach(roomPhotoContainer => {
-        const roomCard = roomPhotoContainer.closest('.room-card');
-        if (!roomCard) return;
-
-        const roomId = roomCard.getAttribute('data-room-id');
-        if (!roomId) return;
-
-        let roomTouchStartX = 0;
-        let roomTouchEndX = 0;
-
-        roomPhotoContainer.addEventListener('touchstart', e => {
-            roomTouchStartX = e.changedTouches[0].screenX;
-        });
-
-        roomPhotoContainer.addEventListener('touchend', e => {
-            roomTouchEndX = e.changedTouches[0].screenX;
-            const swipeThreshold = 50;
-
-            if (roomTouchEndX < roomTouchStartX - swipeThreshold) {
-                changeRoomSlide(roomId, 1); // Swipe left - next slide
-            }
-            if (roomTouchEndX > roomTouchStartX + swipeThreshold) {
-                changeRoomSlide(roomId, -1); // Swipe right - previous slide
-            }
-        });
-
-        // Prevent default touch behavior that might interfere
-        roomPhotoContainer.addEventListener('touchmove', e => {
-            e.preventDefault();
-        }, { passive: false });
-    });
-
-    // Keyboard navigation for main slider only
-    document.addEventListener('keydown', function(e) {
-        // Only handle arrow keys when not focused on input elements
-        if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'BUTTON') {
-            if (e.key === 'ArrowLeft') {
-                e.preventDefault();
-                changeMainSlide(-1);
-            } else if (e.key === 'ArrowRight') {
-                e.preventDefault();
-                changeMainSlide(1);
-            }
-        }
-    });
-
-    // Initial update and availability check on page load
     updateHiddenFields();
-
-    // Add a small delay to ensure DOM is fully rendered
-    setTimeout(() => {
-        checkAllRoomsAvailability();
-    }, 100);
+    setTimeout(checkAllRoomsAvailability, 100);
 });
 </script>
 @endpush

@@ -377,6 +377,10 @@
 
 /* === MOBILE RESPONSIVE === */
 @media (max-width: 768px) {
+
+    .page-title{
+        text-align: center ;
+    }
     .action-buttons {
         flex-direction: column; /* Stack vertically */
         align-items: stretch; /* Make them fill the width */
@@ -535,6 +539,7 @@
                             </ul>
                         </div>
                     </div>
+                    <p style="font-weight: bold">Deskripsi Ruangan</p>
                     <p style="font-size:0.9em; color:#777;">{{ $booking->room->description }}</p>
                 </div>
 

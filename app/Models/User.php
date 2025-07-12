@@ -26,7 +26,8 @@ class User extends Authenticatable
         'status',
         'hp',
         'google_id', // Untuk menyimpan ID unik dari Google
-        'google_avatar_url', // Untuk menyimpan URL avatar dari Google
+        'google_avatar_url', 
+        'profile_photo_path', 
         'email_verified_at', // Bisa diisi saat login via Google
     ];
 

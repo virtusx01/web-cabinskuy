@@ -5,7 +5,6 @@
 <div class="page-header">
     <div class="container">
         <h1>{{ $judul }}</h1>
-        <p>Kelola informasi profil Anda</p>
     </div>
 </div>
 
@@ -38,8 +37,9 @@
                              alt="Profile Picture"
                              class="profile-avatar"
                              id="profileImage">
+                            
                         <div class="avatar-overlay">
-                            <i class="fas fa-camera"></i>
+                            <a href="{{ route('profile.user.edit') }}"><i class="fas fa-camera" style="color: white"></i></a>
                         </div>
                     </div>
                     <div class="profile-status">
@@ -53,7 +53,7 @@
                     <p class="profile-role">{{ $memberRole }}</p>
                     <div class="profile-stats">
                         <div class="stat-item">
-                            <span class="stat-number">{{ $daysJoined }}</span>
+                            <span class="stat-number">{{ (int)$daysJoined }}</span>
                             <span class="stat-label">Hari Bergabung</span>
                         </div>
                         <div class="stat-item">
@@ -133,6 +133,11 @@
 </div>
 
 <style>
+
+.page-header{
+    text-align: center;
+    padding-block: 30px;
+}
 /* Your existing CSS styles go here. No changes needed in CSS for these specific updates. */
 .profile-container {
     max-width: 900px;
@@ -371,6 +376,7 @@
     gap: 20px;
 }
 
+
 .security-item {
     display: flex;
     align-items: center;
@@ -410,10 +416,13 @@
 
 .profile-actions {
     padding: 30px;
-    background: #f8f9fa;
     display: flex;
     gap: 15px;
     justify-content: center;
+}
+
+.profile-actions a {
+    color: black;
 }
 
 .btn-primary, .btn-secondary {
@@ -426,22 +435,17 @@
     font-weight: 500;
     transition: all 0.3s ease;
     font-size: 0.95em;
+    background: none !important;
 }
 
-.btn-primary:hover {
-    background: #1c7d43;
-    border-color: #1c7d43;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(34, 153, 84, 0.3);
-}
-
-.btn-secondary:hover {
+.btn-primary:hover, .btn-secondary:hover {
     background: #f8f9fa;
     border-color: #229954;
     color: #229954;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
+
 
 @media (max-width: 768px) {
     .profile-header {

@@ -10,7 +10,7 @@
         min-height: 100vh;
     }
     .breadcrumb {
-        padding: 15px 0;
+        padding: 10px 0;
         font-size: 0.9em;
         color: #777;
     }
@@ -230,6 +230,10 @@
     }
 
     @media (max-width: 768px) {
+
+        .page-title{
+            text-align: center;
+        }
         .booking-card-body {
             flex-direction: column;
             align-items: center; /* Keep this for centering on small screens too */
@@ -251,6 +255,12 @@
             width: 100%;
             margin-bottom: 10px;
         }
+
+        .btn-detail{
+            flex-direction: column;
+            align-items: stretch;
+            text-align: center;
+        }
     }
 </style>
 @endpush
@@ -263,7 +273,7 @@
             <span>My Bookings</span>
         </nav>
 
-        <h1 class="page-title">Booking Saya</h1>
+        <h1 class="page-title" style="text-align: center; padding-block: 20px;">Booking Saya</h1>
 
         @if (session('success'))
             <div class="alert alert-success">

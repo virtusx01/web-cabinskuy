@@ -6,7 +6,18 @@
 @push('styles')
 {{-- Menambahkan beberapa style untuk tampilan yang lebih baik --}}
 <style>
-
+    .breadcrumb {
+        padding-block: 25px 0;
+        font-size: 0.9em;
+        color: #777;
+    }
+    .breadcrumb a {
+        color: #229954;
+        text-decoration: none;
+    }
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
     .filter-bar {
         display: flex;
         gap: 1.5rem;
@@ -500,7 +511,14 @@
         .cabin-slider-nav.next {
             right: 8px;
         }
+        .page-title{
+            text-align: center;
+        }
+        #page-explaintitle{
+            text-align: center;
+        }
     }
+
 </style>
 @endpush
 
@@ -509,8 +527,12 @@
 
 <section class="page-header">
     <div class="container">
-        <h1>Temukan Kabin Impian Anda</h1>
-        <p>Jelajahi berbagai pilihan kabin di lokasi terbaik.</p>
+        <nav class="breadcrumb">
+            <a href="{{ route('frontend.beranda') }}">Home</a> >
+            <span>List Cabin</span>
+        </nav>
+        <h1 class="page-title" style="padding-block: 10px; text-align: center;font-size: 2.5rem;">Temukan Kabin Impian Anda</h1>
+        <p id="page-explaintitle" style="padding-bottom: 20px; text-align: center;">Jelajahi berbagai pilihan kabin di lokasi terbaik.</p>
     </div>
 </section>
 
@@ -553,6 +575,13 @@
                     <option value="Family Suite" {{ request('typeroom') == 'Family Suite' ? 'selected' : '' }}>Family Suite</option>
                 </select>
             </div>
+
+            <div class="form-group">
+            <label for="guests" data-translate="guests_label">Jumlah Tamu:</label>
+            <select id="guests" name="guests" onchange="this.form.submit()">
+            </select>
+        </div>
+                
             <noscript>
                 <button type="submit" class="btn">Filter</button>
             </noscript>

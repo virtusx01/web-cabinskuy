@@ -195,7 +195,13 @@
 </div>
 
 <style>
-/* Your existing CSS styles go here (no changes needed) */
+
+.page-header{
+    text-align: center;
+    padding-block: 30px;
+}
+
+
 .edit-profile-container {
     max-width: 800px;
     margin: 0 auto;
@@ -521,6 +527,23 @@
         flex-direction: column;
         text-align: center;
         gap: 20px;
+    }
+    .section-header{
+        text-align: center;
+        align-items: center;
+        justify-content: center;
+        justify-items: center;
+    }
+    .btn-primary{
+        text-align: center;
+        align-items: center;
+        justify-content: center
+    }
+
+    .btn-secondary{
+        text-align: center;
+        align-items: center;
+        justify-content: center;
     }
 
     .photo-upload-controls {
