@@ -24,10 +24,10 @@ return new class extends Migration
             $table->enum('role', ['superadmin', 'admin', 'customer'])->default('customer');
             $table->boolean('status')->default(true); // Perbaikan sintaks. Default(true) sama dengan 1.
             $table->string('hp', 15)->nullable(); // Dibuat nullable dan panjangnya ditambah sedikit
-            
             // Kolom spesifik untuk Google Auth
             $table->string('google_id')->nullable();
-            $table->string('google_avatar_url')->nullable(); // URL untuk avatar dari Google
+            $table->string('google_avatar_url')->nullable();
+            $table->string('profile_photo_path')->nullable();
 
             // Kolom bawaan Laravel
             $table->rememberToken();

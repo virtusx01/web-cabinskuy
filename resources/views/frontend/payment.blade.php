@@ -25,6 +25,8 @@
         font-size: 2.2em;
         color: #223324;
         margin-bottom: 25px;
+        text-align: center;
+        padding-block: 20px;
     }
 
     .payment-layout {

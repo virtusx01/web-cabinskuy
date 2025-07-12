@@ -39,7 +39,7 @@ class GoogleAuthController extends Controller
                 if ($emailUser) {
                     // Jika email sudah terdaftar tapi belum ada google_id, update user
                     $emailUser->google_id = $user->id;
-                    $emailUser->avatar = $user->avatar;
+                    $emailUser->google_avatar_url = $user->google_avatar_url;
                     $emailUser->save();
                     Auth::login($emailUser);
                     return redirect()->intended('/')->with('success', 'Account linked and logged in with Google!');
@@ -50,7 +50,7 @@ class GoogleAuthController extends Controller
                         'name' => $user->name,
                         'email' => $user->email,
                         'google_id' => $user->id,
-                        'google_avatar_url' => $user->avatar,
+                        'google_avatar_url' => $user->google_avatar_url,
                         'email_verified_at' => now(), // Anggap email sudah terverifikasi oleh Google
                         'password' => null,
                     ]);

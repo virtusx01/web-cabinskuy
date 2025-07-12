@@ -824,7 +824,11 @@
                         @if(Auth::user()->isCustomer())
                             <a href="{{ route('profile.user.show') }}" class="profile-info {{ request()->routeIs('profile.user.*') ? 'active' : '' }}">
                                 <div class="profile-picture"
-                                    style="background-image: url('{{ Auth::user()->profile_photo_path ? asset('storage/' . Auth::user()->profile_photo_path) : asset('backend/images/default-avatar.png') }}');">
+                                    style="background-image: url('{{ 
+                                        Auth::user()->google_avatar_url 
+                                        ? Auth::user()->google_avatar_url 
+                                        : (Auth::user()->profile_photo_path ? asset('storage/' . Auth::user()->profile_photo_path) : asset('backend/images/default-avatar.png')) 
+                                    }}');">
                                 </div>
                                 <span class="profile-name">{{ Auth::user()->name }}</span>
                             </a>

@@ -25,6 +25,7 @@
         font-size: 2.2em;
         color: #223324;
         margin-bottom: 25px;
+        padding-block: 20px;
     }
 
     .booking-layout {
@@ -224,6 +225,9 @@
 
     /* Responsive Design */
     @media (max-width: 768px) {
+        .page-title{
+            text-align: center;
+        }
         .booking-layout {
             grid-template-columns: 1fr;
             gap: 20px;
@@ -353,6 +357,18 @@
 
                     $roomPhotos = safeJsonDecode($room->room_photos);
                     $roomDefaultPlaceholder = 'https://via.placeholder.com/100x80/e9f5e9/333333?text=Room';
+
+                    $cabinRegency = $cabin->regency ?? 'N/A';
+                    $cabinProvince = $cabin->province ?? 'N/A';
+                    $displayLocation = '';
+                    if ($cabinRegency !== 'N/A' || $cabinProvince !== 'N/A') {
+                        $displayLocation = ($cabinRegency !== 'N/A' ? $cabinRegency : '') .
+                                            ($cabinRegency !== 'N/A' && $cabinProvince !== 'N/A' ? ', ' : '') .
+                                            ($cabinProvince !== 'N/A' ? $cabinProvince : '');
+                    }
+                    if (empty($displayLocation)) {
+                        $displayLocation = 'Lokasi Tidak Diketahui'; // Fallback if both are N/A
+                    }
                 @endphp
 
                 <div class="summary-room-info">
@@ -361,7 +377,7 @@
                     <div class="summary-room-details">
                         <h4>{{ $room->typeroom }} Kabin</h4>
                         <p>{{ $cabin->name }}</p>
-                        <p>📍 {{ $cabin->location }}</p>
+                        <p>📍 {{$cabin->location_address}}, {{ $displayLocation }}</p>
                     </div>
                 </div>
 
