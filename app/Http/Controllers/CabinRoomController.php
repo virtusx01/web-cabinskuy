@@ -108,18 +108,17 @@ class CabinRoomController extends Controller
         }
 
         // Handle new photo uploads
-        $currentPhotoPaths = [];
-        if ($request->hasFile('room_photos')) {
-            foreach ($request->file('room_photos') as $photo) {
-                // Nama file unik (logika Anda sudah bagus)
-                $filename = time() . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
-                
-                // Simpan ke disk 's3' di dalam folder 'images/cabin_rooms'
-                $path = $photo->storeAs('images/cabin_rooms', $filename, 's3');
-                
-                $currentPhotoPaths[] = $path;
-            }
+    if ($request->hasFile('room_photos')) {
+        foreach ($request->file('room_photos') as $photo) {
+            // Nama file unik (logika Anda sudah bagus)
+            $filename = time() . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
+            
+            // Simpan ke disk 's3' di dalam folder 'images/cabin_rooms'
+            $path = $photo->storeAs('images/cabin_rooms', $filename, 's3');
+            
+            $currentPhotoPaths[] = $path;
         }
+    }
 
         $room->update([
             'typeroom' => $request->typeroom,

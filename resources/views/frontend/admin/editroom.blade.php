@@ -364,28 +364,27 @@
     </div>
 
     @php
-        // Start with the raw room photos, which should be an array due to model casting
+        use Illuminate\Support\Facades\Storage;
+        use Illuminate\Support\Str;
+
+        // Current photo paths directly from model, assume it's already an array from cast
         $initialRoomPhotos = (array)($room->room_photos ?? []);
         
-        // Clean up each path for consistent URL generation
-        $cleanedCurrentPhotos = [];
+        // Prepare paths for display and JavaScript (ensure they are relative to bucket root)
+        $currentPhotosForBladeAndJs = [];
         foreach ($initialRoomPhotos as $path) {
             if (is_string($path)) {
-                // Ensure path uses forward slashes and is cleaned
-                $cleanedPath = str_replace(['\\', '"'], ['/', ''], $path);
-                // Remove leading slash if it exists, to prevent double slashes when concatenating with asset('storage/')
-                $cleanedPath = ltrim($cleanedPath, '/');
-                // Ensure it starts with 'images/cabin_rooms/' for consistency,
-                // this might be adjusted based on your actual storage structure
-                if (!Str::startsWith($cleanedPath, 'images/cabin_rooms/')) {
-                    // This case should ideally not happen if paths are stored correctly from upload
-                    // But as a safeguard, try to prepend it if it's just the filename
-                    $cleanedPath = 'images/cabin_rooms/' . basename($cleanedPath);
-                }
-                $cleanedCurrentPhotos[] = $cleanedPath;
+                // Clean path to be consistent (forward slashes, no leading slash)
+                $cleanedPath = str_replace('\\', '/', $path);
+                $cleanedPath = ltrim($cleanedPath, '/'); // Remove any accidental leading slash
+                
+                // You might need to adjust this logic if your storage paths are inconsistent.
+                // For example, if some paths are 'images/...' and others are just 'filename.jpg'
+                // For S3/R2, the full key (path) is needed.
+                
+                $currentPhotosForBladeAndJs[] = $cleanedPath;
             }
         }
-        $currentPhotos = $cleanedCurrentPhotos; // This will be passed to JavaScript
     @endphp
 
     <div class="main-content-grid">
@@ -453,12 +452,12 @@
                 
                 <div class="current-photos-section">
                     <label>Foto Saat Ini</label>
-                    @if(!empty($currentPhotos))
+                    @if(!empty($currentPhotosForBladeAndJs))
                         <div class="current-photos-grid">
-                            @foreach($currentPhotos as $photoPath)
+                            @foreach($currentPhotosForBladeAndJs as $photoPath)
                                 @php
                                     $photoUrl = asset('images/cabinskuy_placeholder.jpg'); // Default placeholder
-                                    if ($photoPath && Storage::disk('s3')->exists($photoPath)) {
+                                    if (Storage::disk('s3')->exists($photoPath)) {
                                         $photoUrl = Storage::disk('s3')->url($photoPath);
                                     }
                                 @endphp
@@ -480,14 +479,18 @@
 
                 <div class="form-group add-new-photo-area">
                     <label for="room_photos_input">Tambah Foto Baru</label>
+                    {{-- File input wrapper (label for the actual input) --}}
                     <label for="room_photos_input" class="file-input-wrapper">
-                        <img class="preview-image" style="display: none;">
+                        {{-- New Preview images will be dynamically added here --}}
+                        <div id="new-photo-previews-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 10px;">
+                            {{-- Images will be appended here by JS --}}
+                        </div>
                         <span class="file-input-label">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2zm2.354 5.146a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2z"></path></svg>
                             <br>Klik untuk unggah foto baru (opsional)
                         </span>
                     </label>
-                    <input type="file" name="room_photos[]" id="room_photos_input" accept="image/*" multiple style="display:none;">
+                    <input type="file" name="room_photos[]" id="room_photos_input" accept="image/*" multiple>
                 </div>
 
                 <div class="form-actions">
@@ -520,10 +523,10 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Current photo paths passed from Blade, cleaned and ready for use
-    const currentPhotoPaths = @json($currentPhotos ?? []); 
-    let newPhotoFiles = []; // Files selected via the new photo input
-    // Use a Set for efficient tracking of photos to be deleted
+    // Current photo paths from Blade, which are relative paths like 'images/cabin_rooms/photo.jpg'
+    const currentPhotoPaths = @json($currentPhotosForBladeAndJs ?? []); 
+    let newPhotoFiles = []; // Array of File objects selected via the new photo input
+    // Use a Set for efficient tracking of photos to be deleted (relative paths)
     let photosToDelete = new Set(
         Array.from(document.querySelectorAll('.delete-photo-checkbox:checked'))
              .map(cb => cb.value)
@@ -543,21 +546,37 @@ document.addEventListener('DOMContentLoaded', function() {
         mainPreview: document.getElementById('main-preview-image'),
         thumbContainer: document.getElementById('thumbnail-preview-container'),
         previewTyperoom: document.getElementById('preview-typeroom'),
-        previewprice: document.getElementById('preview-price'),
+        previewPrice: document.getElementById('preview-price'), // Corrected ID
         previewDescription: document.getElementById('preview-description'),
         previewStatus: document.getElementById('preview-status'),
-        newPhotoPreviewImage: document.querySelector('.file-input-wrapper .preview-image'),
+        newPhotoPreviewsContainer: document.getElementById('new-photo-previews-container'), // New container for multiple previews
         newPhotoInputLabel: document.querySelector('.file-input-wrapper .file-input-label')
     };
 
-    function formatprice(value) {
+    // Placeholder for when no images are available
+    const placeholderSvgHtml = `
+        <div class="image-placeholder">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-image" viewBox="0 0 16 16">
+                <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>
+            </svg>
+            <span>Foto akan tampil di sini</span>
+        </div>`;
+
+    // Retrieve the base URL for S3/R2 assets from Laravel's env helper.
+    // This assumes AWS_URL is set in your .env and includes the bucket path (e.g., https://pub-id.r2.dev/your-bucket)
+    // Or if you want to construct it from endpoint and bucket name:
+    // const assetBaseUrl = "{{ rtrim(env('AWS_ENDPOINT'), '/') . '/' . env('AWS_BUCKET') }}";
+    const assetBaseUrl = "{{ rtrim(env('AWS_URL'), '/') }}"; // Assumes AWS_URL includes bucket
+
+    function formatPrice(value) { // Corrected function name
         const number = parseInt(value, 10) || 0;
         return 'Rp ' + number.toLocaleString('id-ID');
     }
 
     function updateTextPreview() {
         elements.previewTyperoom.textContent = elements.typeroomInput.value || 'Tipe Ruangan';
-        elements.previewprice.textContent = formatprice(elements.priceInput.value);
+        elements.previewPrice.textContent = formatPrice(elements.priceInput.value); // Corrected ID
         elements.previewDescription.textContent = elements.descriptionInput.value || 'Deskripsi ruangan akan muncul di sini...';
 
         const isAvailable = elements.statusInput.value == '1';
@@ -570,31 +589,23 @@ document.addEventListener('DOMContentLoaded', function() {
         if (src) {
             elements.mainPreview.innerHTML = `<img src="${src}" alt="Main preview">`;
         } else {
-            elements.mainPreview.innerHTML = `
-                <div class="image-placeholder">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-image" viewBox="0 0 16 16">
-                        <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
-                        <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>
-                    </svg>
-                    <span>Foto akan tampil di sini</span>
-                </div>`;
+            elements.mainPreview.innerHTML = placeholderSvgHtml;
         }
     };
 
     function renderPhotoPreview() {
         elements.thumbContainer.innerHTML = '';
         let photosForPreview = [];
-        const assetBaseUrl = "{{ Storage::disk('s3') }}"; 
-
-        // Collect existing photos that are NOT marked for deletion
-        const nonDeletedCurrentPhotos = currentPhotoPaths.filter(path => !photosToDelete.has(path));
-
+        
         // Add non-deleted current photos to the preview array
-        nonDeletedCurrentPhotos.forEach(path => {
-            photosForPreview.push(`${assetBaseUrl}/${path}`);
+        currentPhotoPaths.forEach(path => {
+            if (!photosToDelete.has(path)) {
+                // Construct the full URL using the base URL and the relative path
+                photosForPreview.push(`${assetBaseUrl}/${path}`);
+            }
         });
 
-        // Add newly selected files to the preview array
+        // Add newly selected files to the preview array (using local object URLs)
         newPhotoFiles.forEach(file => {
             photosForPreview.push(URL.createObjectURL(file));
         });
@@ -626,16 +637,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function handleNewFileSelection(event) {
-        newPhotoFiles = Array.from(event.target.files);
+        newPhotoFiles = Array.from(event.target.files); // Get all selected files
+
+        // Clear previous new photo previews
+        elements.newPhotoPreviewsContainer.innerHTML = ''; 
 
         if (newPhotoFiles.length > 0) {
-            elements.newPhotoPreviewImage.src = URL.createObjectURL(newPhotoFiles[0]);
-            elements.newPhotoPreviewImage.style.display = 'block';
-            elements.newPhotoInputLabel.style.display = 'none';
+            // Display previews for new files below the upload area
+            newPhotoFiles.forEach(file => {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.className = 'preview-image';
+                elements.newPhotoPreviewsContainer.appendChild(img);
+            });
+            elements.newPhotoPreviewsContainer.style.display = 'flex'; // Show container
+            elements.newPhotoInputLabel.style.display = 'none'; // Hide text label
         } else {
-            elements.newPhotoPreviewImage.src = '';
-            elements.newPhotoPreviewImage.style.display = 'none';
-            elements.newPhotoInputLabel.style.display = 'block';
+            elements.newPhotoPreviewsContainer.style.display = 'none'; // Hide container
+            elements.newPhotoInputLabel.style.display = 'block'; // Show text label
         }
 
         // Deselect all delete checkboxes when new files are chosen
@@ -647,11 +666,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         photosToDelete.clear(); // Clear the set of photos to delete
-        renderPhotoPreview();
+        renderPhotoPreview(); // Re-render main preview with new photos
     }
     
     // Event listener for delete checkboxes
-    elements.deleteCheckboxes.forEach((checkbox) => { // Removed index as it's not directly needed here
+    elements.deleteCheckboxes.forEach((checkbox) => {
         checkbox.addEventListener('change', () => {
             const photoPath = checkbox.value;
             const parentItem = checkbox.closest('.current-photo-item');
@@ -669,18 +688,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Clear new file input and files when a delete checkbox is changed
+            // This is crucial to avoid conflicting states
             elements.newPhotoInput.value = ''; 
             newPhotoFiles = [];
-            elements.newPhotoPreviewImage.src = '';
-            elements.newPhotoPreviewImage.style.display = 'none';
+            elements.newPhotoPreviewsContainer.innerHTML = '';
+            elements.newPhotoPreviewsContainer.style.display = 'none';
             elements.newPhotoInputLabel.style.display = 'block';
 
-            renderPhotoPreview();
+            renderPhotoPreview(); // Re-render main preview
         });
 
-        // Set initial state for checkboxes based on old input (if a form validation error occurred)
-        // This is handled by PHP now: `{{ in_array($photoPath, old('delete_photos', [])) ? 'checked' : '' }}`
-        // So we only need to apply the class if it's checked on load.
+        // Apply initial state for checkboxes (from old input or initial load)
         if (checkbox.checked) {
             const parentItem = checkbox.closest('.current-photo-item');
             if (parentItem) {
