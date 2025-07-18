@@ -422,7 +422,7 @@
                         @if($cabin->cabin_photos && count($cabin->cabin_photos) > 0)
                             @foreach($cabin->cabin_photos as $photo)
                                 <div class="current-photo-item" data-photo-path="{{ $photo }}">
-                                    <img src="{{ Storage::disk('s3')->url($photo)" alt="Foto Kabin">
+                                    <img src="{{ Storage::disk('s3')->url($photo)}}" alt="Foto Kabin">
                                     <div class="photo-actions">
                                         <label>
                                             <input type="checkbox" name="delete_photos[]" value="{{ $photo }}" class="delete-photo-checkbox"> Hapus

@@ -584,7 +584,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderPhotoPreview() {
         elements.thumbContainer.innerHTML = '';
         let photosForPreview = [];
-        const assetBaseUrl = "{{ asset('storage/') }}"; 
+        const assetBaseUrl = "{{ Storage::disk('s3') }}"; 
 
         // Collect existing photos that are NOT marked for deletion
         const nonDeletedCurrentPhotos = currentPhotoPaths.filter(path => !photosToDelete.has(path));
