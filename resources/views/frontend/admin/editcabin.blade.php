@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
         newPhotoPreviewImage: document.querySelector('.file-input-wrapper .preview-image'),
         newPhotoInputLabel: document.querySelector('.file-input-wrapper .file-input-label')
     };
-    const assetRoot = "{{ rtrim(Storage::disk('s3'))) }}";
+    const assetRoot = "{{ rtrim(env('AWS_URL'), '/') }}";
 
     const initialProvinceName = elements.provinceNameHidden.value;
     const initialRegencyName = elements.regencyNameHidden.value;
