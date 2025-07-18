@@ -18,7 +18,6 @@ class CabinRoomController extends Controller
     public function store(Request $request, Cabin $cabin)
     {
         $request->validate([
-            // 'id_room' => 'required|string|max:10|unique:cabin_rooms,id_room', // Remove this validation
             'typeroom' => 'required|string|in:Standard,Deluxe,Executive,Family Suite',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
@@ -32,7 +31,10 @@ class CabinRoomController extends Controller
         $photoPaths = [];
         if ($request->hasFile('room_photos')) {
             foreach ($request->file('room_photos') as $photo) {
-                $filename = time() . '_' . $photo->getClientOriginalName();
+                // Generate a unique filename using Str::random
+                $filename = time() . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
+                
+                // Simpan ke disk 's3' di dalam folder 'images/cabin_rooms'
                 $path = $photo->storeAs('images/cabin_rooms', $filename, 's3');
                 $photoPaths[] = $path;
             }
@@ -69,8 +71,6 @@ class CabinRoomController extends Controller
         // Eager load the 'cabin' relationship
         $room->load('cabin');
 
-        // $room->room_photos should already be an array due to model casting.
-        // The Blade @php block has its own fallback, which is fine.
         return view('frontend.admin.editroom', compact('room'));
     }
 
@@ -89,36 +89,47 @@ class CabinRoomController extends Controller
             'delete_photos.*' => 'string', // Each element should be a string path
         ]);
 
-        $currentPhotoPaths = $room->room_photos ?? []; // Get existing photos from DB
+        // Get existing photos from DB (which should be an array due to model casting)
+        $currentPhotoPathsInDb = (array)($room->room_photos ?? []); 
+        
+        // This array will hold the final set of photo paths to be saved back to the database
+        $finalPhotoPaths = $currentPhotoPathsInDb;
 
-        // Handle deletions first
-        if ($request->has('delete_photos') && is_array($request->delete_photos)) {
-            foreach ($request->delete_photos as $photoToDelete) {
-                // Ensure the path is clean before attempting deletion
-                $cleanedPhotoToDelete = ltrim(str_replace('\\', '/', $photoToDelete), '/');
+        // --- Handle deletions first ---
+        $photosToDelete = $request->input('delete_photos', []); // Get array of paths to delete
+
+        if (!empty($photosToDelete)) {
+            foreach ($photosToDelete as $photoPathToDelete) {
+                // IMPORTANT: Clean the path received from frontend before comparing and deleting.
+                // It might contain backslashes or other unexpected characters if not carefully handled in JS.
+                $cleanedPhotoPathToDelete = ltrim(str_replace('\\', '/', $photoPathToDelete), '/');
                 
-                // Only delete if the path exists in the current room's photos
-                // and if the file actually exists on disk.
-                if (in_array($cleanedPhotoToDelete, $currentPhotoPaths) && Storage::disk('s3')->exists($cleanedPhotoToDelete)) {
-                    Storage::disk('s3')->delete($cleanedPhotoToDelete);
-                    // Remove from our working array
-                    $currentPhotoPaths = array_diff($currentPhotoPaths, [$cleanedPhotoToDelete]);
+                // Only delete if the path exists in the current room's photos from DB
+                // AND if the file actually exists on S3.
+                if (in_array($cleanedPhotoPathToDelete, $finalPhotoPaths) && Storage::disk('s3')->exists($cleanedPhotoPathToDelete)) {
+                    Storage::disk('s3')->delete($cleanedPhotoPathToDelete);
+                    
+                    // Remove the path from our working array ($finalPhotoPaths)
+                    $finalPhotoPaths = array_diff($finalPhotoPaths, [$cleanedPhotoPathToDelete]);
                 }
             }
         }
 
-        // Handle new photo uploads
-    if ($request->hasFile('room_photos')) {
-        foreach ($request->file('room_photos') as $photo) {
-            // Nama file unik (logika Anda sudah bagus)
-            $filename = time() . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
-            
-            // Simpan ke disk 's3' di dalam folder 'images/cabin_rooms'
-            $path = $photo->storeAs('images/cabin_rooms', $filename, 's3');
-            
-            $currentPhotoPaths[] = $path;
+        // --- Handle new photo uploads ---
+        $newlyUploadedPaths = [];
+        if ($request->hasFile('room_photos')) {
+            foreach ($request->file('room_photos') as $photo) {
+                // Generate a unique filename using Str::random
+                $filename = time() . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
+                
+                // Simpan ke disk 's3' di dalam folder 'images/cabin_rooms'
+                $path = $photo->storeAs('images/cabin_rooms', $filename, 's3');
+                $newlyUploadedPaths[] = $path; // Add new photo path to a temporary array
+            }
         }
-    }
+
+        // Combine existing non-deleted photos with newly uploaded photos
+        $finalPhotoPaths = array_merge($finalPhotoPaths, $newlyUploadedPaths);
 
         $room->update([
             'typeroom' => $request->typeroom,
@@ -127,7 +138,7 @@ class CabinRoomController extends Controller
             'max_guests' => $request->max_guests,
             'slot_room' => $request->slot_room,
             'status' => $request->status,
-            'room_photos' => array_values($currentPhotoPaths), // Re-index array after diff and add
+            'room_photos' => array_values($finalPhotoPaths), // Re-index array keys from 0
         ]);
 
         return redirect()->route('admin.cabins.show', $room->id_cabin)->with('success', 'Ruangan berhasil diperbarui!');
@@ -135,14 +146,26 @@ class CabinRoomController extends Controller
 
     public function destroy(CabinRoom $room)
     {
-        $photoPaths = $room->room_photos ?? [];
+        // Get all photo paths associated with this room
+        $photoPaths = (array)($room->room_photos ?? []);
 
         if (!empty($photoPaths)) {
             foreach ($photoPaths as $photo) {
-                Storage::disk('s3')->delete($photo);
+                if (is_string($photo)) { // Ensure it's a string before attempting to delete
+                    // IMPORTANT: Clean the path before deleting from S3
+                    // The path stored in the DB should be relative (e.g., 'images/cabin_rooms/file.jpg')
+                    // If your DB stores URLs, you need to extract the path.
+                    // Assuming DB stores relative paths for S3
+                    $cleanedPhoto = ltrim(str_replace('\\', '/', $photo), '/');
+                    
+                    if (Storage::disk('s3')->exists($cleanedPhoto)) {
+                        Storage::disk('s3')->delete($cleanedPhoto);
+                    }
+                }
             }
         }
 
+        // Delete the room record from the database
         $room->delete();
 
         // Redirect ke halaman detail kabin setelah menghapus ruangan

@@ -66,14 +66,14 @@ class CabinController extends Controller
 
         // Fetch unique regency and province combinations for the location filter dropdown
         $allLocations = Cabin::select('regency', 'province')
-                                ->distinct()
-                                ->orderBy('province')
-                                ->orderBy('regency')
-                                ->get()
-                                ->map(function ($item) {
-                                    return ['regency' => $item->regency, 'province' => $item->province];
-                                })
-                                ->toArray();
+                              ->distinct()
+                              ->orderBy('province')
+                              ->orderBy('regency')
+                              ->get()
+                              ->map(function ($item) {
+                                  return ['regency' => $item->regency, 'province' => $item->province];
+                              })
+                              ->toArray();
 
         $cabins->appends($request->except('page')); // Append all current filter parameters
 
@@ -192,7 +192,7 @@ class CabinController extends Controller
             'status' => 'required|boolean',
             'delete_photos' => 'nullable|array',
             'delete_photos.*' => 'string',
-            'photo_order' => 'nullable|json',
+            // 'photo_order' => 'nullable|json', // Removed from validation, handle manually if needed
         ]);
 
         $provinceId = $request->input('province');
@@ -234,58 +234,72 @@ class CabinController extends Controller
             return back()->withInput()->withErrors(['regency' => 'Invalid regency selected for update.']);
         }
 
-        $currentPhotoPaths = (array)($cabin->cabin_photos ?? []);
-        $updatedPhotoPaths = $currentPhotoPaths;
+        // Get current photos from the database
+        $currentPhotoPathsInDb = (array)($cabin->cabin_photos ?? []);
+        
+        // Initialize an array to hold the final set of photo paths for the cabin
+        $finalPhotoPaths = $currentPhotoPathsInDb;
 
-        // Handle deletions first
-        if ($request->has('delete_photos') && is_array($request->delete_photos)) {
-            foreach ($request->delete_photos as $photoToDelete) {
-                // Ensure path is clean
-                $cleanedPhotoToDelete = ltrim(str_replace(['\\', url('storage/') . '/'], ['/', ''], $photoToDelete), '/');
+        // --- Handle deletions first ---
+        // The delete_photos array from frontend should contain actual relative paths (e.g., 'images/cabin/file.jpg')
+        $photosToDelete = $request->input('delete_photos', []); // Get array of paths to delete
 
-                // Only delete if the path exists in the current cabin's photos
-                if (in_array($cleanedPhotoToDelete, $updatedPhotoPaths) && Storage::disk('s3')->exists($cleanedPhotoToDelete)) {
-                    Storage::disk('s3')->delete($cleanedPhotoToDelete);
-                    // Remove from our working array
-                    $updatedPhotoPaths = array_diff($updatedPhotoPaths, [$cleanedPhotoToDelete]);
+        if (!empty($photosToDelete)) {
+            foreach ($photosToDelete as $photoPathToDelete) {
+                // Ensure the path to delete is clean and exists in current photos
+                // Remove any leading slashes or potential URL prefixes that might be added by JS
+                $cleanedPhotoPathToDelete = ltrim(str_replace('\\', '/', $photoPathToDelete), '/');
+                
+                // Only delete if it's actually in the database's photo list AND exists on S3
+                if (in_array($cleanedPhotoPathToDelete, $finalPhotoPaths) && Storage::disk('s3')->exists($cleanedPhotoPathToDelete)) {
+                    Storage::disk('s3')->delete($cleanedPhotoPathToDelete);
+                    // Remove from our working array (finalPhotoPaths)
+                    $finalPhotoPaths = array_diff($finalPhotoPaths, [$cleanedPhotoPathToDelete]);
                 }
             }
         }
 
-        // Handle new photo uploads
+        // --- Handle new photo uploads ---
+        $newlyUploadedPaths = [];
         if ($request->hasFile('cabin_photos')) {
             foreach ($request->file('cabin_photos') as $photo) {
                 // Generate a unique filename
                 $filename = time() . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
                 $path = $photo->storeAs('images/cabin', $filename, 's3');
-                $updatedPhotoPaths[] = $path; // Add new photo path
+                $newlyUploadedPaths[] = $path; // Add new photo path to a temporary array
             }
         }
 
-        // Reorder photos based on photo_order if provided
+        // Combine existing non-deleted photos with newly uploaded photos
+        $finalPhotoPaths = array_merge($finalPhotoPaths, $newlyUploadedPaths);
+
+        // --- Handle photo order if provided ---
+        // If photo_order is submitted, it contains the *desired order* of all *retained* photos (old and new).
+        // It's usually a JSON string of paths.
         if ($request->has('photo_order')) {
-            $orderedPaths = json_decode($request->photo_order, true);
-            if (is_array($orderedPaths)) {
-                $finalPhotoOrder = [];
-                // Prioritize the order from JS, but only include photos that are not deleted
-                // and exist in the combined list (old and new).
-                foreach ($orderedPaths as $path) {
-                    $cleanedPath = ltrim(str_replace('\\', '/', $path), '/'); // Clean path for comparison
-                    if (in_array($cleanedPath, $updatedPhotoPaths)) {
-                        $finalPhotoOrder[] = $cleanedPath;
+            $orderedPathsFromFrontend = json_decode($request->photo_order, true);
+            if (is_array($orderedPathsFromFrontend)) {
+                $reorderedFinalPaths = [];
+                // Filter the ordered paths to only include those that are actually present
+                // in our $finalPhotoPaths (i.e., not deleted and actually uploaded)
+                foreach ($orderedPathsFromFrontend as $pathInOrder) {
+                    $cleanedPathInOrder = ltrim(str_replace('\\', '/', $pathInOrder), '/'); // Clean path for comparison
+                    if (in_array($cleanedPathInOrder, $finalPhotoPaths)) {
+                        $reorderedFinalPaths[] = $cleanedPathInOrder;
                     }
                 }
-                // Add any newly uploaded photos that might not be in the `photo_order` yet
-                // (e.g., if user uploads new photos after setting order, they'll be appended)
-                foreach ($updatedPhotoPaths as $path) {
-                    if (!in_array($path, $finalPhotoOrder)) {
-                        $finalPhotoOrder[] = $path;
+                // Also, add any photos that were newly uploaded and might not be in the photo_order yet
+                // (e.g., if JS didn't include them in the `photo_order` field for some reason)
+                foreach ($finalPhotoPaths as $path) {
+                    if (!in_array($path, $reorderedFinalPaths)) {
+                        $reorderedFinalPaths[] = $path;
                     }
                 }
-                $updatedPhotoPaths = $finalPhotoOrder;
+                $finalPhotoPaths = $reorderedFinalPaths;
             }
         }
-
+        
+        // Update cabin details
         $cabin->update([
             'name' => $request->name,
             'description' => $request->description,
@@ -293,7 +307,7 @@ class CabinController extends Controller
             'regency' => $regencyName,   // Now storing the name
             'location_address' => $request->location_address,
             'status' => $request->status,
-            'cabin_photos' => array_values($updatedPhotoPaths),
+            'cabin_photos' => array_values($finalPhotoPaths), // Re-index array keys from 0
         ]);
 
         return redirect()->route('admin.cabins.index')->with('success', 'Kabin berhasil diperbarui!');
@@ -308,16 +322,18 @@ class CabinController extends Controller
     public function destroy(Cabin $cabin)
     {
         // Get all cabin photos
-        $photoPaths = (array)($cabin->cabin_photos ?? []);
+        $cabinPhotoPaths = (array)($cabin->cabin_photos ?? []);
 
         // Delete associated room photos first
         foreach ($cabin->rooms as $room) {
             $roomPhotoPaths = (array)($room->room_photos ?? []);
             foreach ($roomPhotoPaths as $roomPhoto) {
-                // Ensure path is cleaned before deletion to avoid issues with backslashes or unexpected prefixes
-                $cleanedRoomPhoto = ltrim(str_replace(['\\', url('storage/') . '/'], ['/', ''], $roomPhoto), '/');
-                if (Storage::disk('s3')->exists($cleanedRoomPhoto)) {
-                    Storage::disk('s3')->delete($cleanedRoomPhoto);
+                if (is_string($roomPhoto)) {
+                    // Ensure path is cleaned before deletion to avoid issues with backslashes or unexpected prefixes
+                    $cleanedRoomPhoto = ltrim(str_replace('\\', '/', $roomPhoto), '/');
+                    if (Storage::disk('s3')->exists($cleanedRoomPhoto)) {
+                        Storage::disk('s3')->delete($cleanedRoomPhoto);
+                    }
                 }
             }
             // Delete the room entry itself (assuming onDelete('cascade') is not set on the foreign key)
@@ -325,11 +341,11 @@ class CabinController extends Controller
         }
 
         // Delete cabin photos
-        if (!empty($photoPaths)) {
-            foreach ($photoPaths as $photo) {
+        if (!empty($cabinPhotoPaths)) {
+            foreach ($cabinPhotoPaths as $photo) {
                 if (is_string($photo)) {
                     // Ensure path is cleaned before deletion
-                    $cleanedPhoto = ltrim(str_replace(['\\', url('storage/') . '/'], ['/', ''], $photo), '/');
+                    $cleanedPhoto = ltrim(str_replace('\\', '/', $photo), '/');
                     if (Storage::disk('s3')->exists($cleanedPhoto)) {
                         Storage::disk('s3')->delete($cleanedPhoto);
                     }
