@@ -110,7 +110,8 @@
         flex-shrink: 0; /* Jangan menyusut */
     }
     .search-form .btn-search:hover {
-        background-color: var(--dark-green);
+        background-color: rgb(153, 255, 153);
+        color: black;
     }
 
     /* Cabin Types Section */
