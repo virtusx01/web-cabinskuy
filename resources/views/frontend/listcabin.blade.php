@@ -598,7 +598,7 @@
                 if (is_array($cabin->cabin_photos) && !empty($cabin->cabin_photos)) {
                     foreach($cabin->cabin_photos as $photo) {
                         if (!empty($photo)) {
-                            $cabinPhotos[] = asset('storage/' . $photo);
+                            $cabinPhotos[] = Storage::disk('s3')->url($photo);
                         }
                     }
                 }
@@ -626,7 +626,7 @@
                             <div class="cabin-images-container">
                                 @foreach($cabinPhotos as $index => $photo)
                                     <div class="cabin-image-item">
-                                        <img src="{{ Storage::disk('s3')->url($photo) }}" alt="{{ $cabin->name }} - Foto {{ $index + 1 }}"
+                                        <img src="{{ $photo }}" alt="{{ $cabin->name }} - Foto {{ $index + 1 }}"
                                             onerror="this.onerror=null;this.src='https://placehold.co/400x250/dc3545/FFFFFF?text=Image+Error';">
                                     </div>
                                 @endforeach
@@ -693,7 +693,7 @@
                                 <div class="room-photos-container">
                                     @foreach($roomPreviewPhotos as $photo)
                                         <div class="room-photo-item">
-                                            <img src="{{ Storage::disk('s3')->url($photo)) }}"
+                                            <img src="{{ Storage::disk('s3')->url($photo) }}"
                                                  alt="Room Preview"
                                                  onerror="this.onerror=null;this.src='https://placehold.co/80x60/e9ecef/6c757d?text=No+Image';">
                                         </div>

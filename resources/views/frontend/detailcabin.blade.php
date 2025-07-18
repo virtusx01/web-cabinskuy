@@ -541,7 +541,7 @@
                     @if(!empty($cabinPhotos))
                         @foreach($cabinPhotos as $photo)
                             <div class="slide">
-                                <img src="{{ asset('storage/' . str_replace('\\', '/', $photo)) }}" alt="Cabin Photo {{ $loop->iteration }}">
+                                <img src="{{ Storage::disk('s3')->url($photo) }}" alt="Cabin Photo {{ $loop->iteration }}">
                             </div>
                         @endforeach
                     @else
@@ -565,7 +565,7 @@
             <div class="thumbnail-grid" id="thumbnail-grid">
                 @if(!empty($cabinPhotos))
                     @foreach($cabinPhotos as $photo)
-                        <img src="{{ Storage::disk('s3')->url($photo)) }}" alt="Thumbnail {{ $loop->iteration }}" onclick="goToMainSlide({{ $loop->index }})">
+                        <img src="{{ Storage::disk('s3')->url($photo) }}" alt="Thumbnail {{ $loop->iteration }}" onclick="goToMainSlide({{ $loop->index }})">
                     @endforeach
                 @else
                     <img src="{{ $defaultPlaceholder }}" alt="No Photo" class="thumbnail active-thumbnail">
@@ -618,7 +618,7 @@
                             @if(!empty($roomPhotos))
                                 @foreach($roomPhotos as $photo)
                                     <div class="room-photo-slide">
-                                        <img src="{{ asset('storage/' . str_replace('\\', '/', $photo)) }}" alt="{{ $room->typeroom }} Photo {{ $loop->iteration }}">
+                                        <img src="{{ Storage::disk('s3')->url($photo) }}" alt="{{ $room->typeroom }} Photo {{ $loop->iteration }}">
                                     </div>
                                 @endforeach
                             @else

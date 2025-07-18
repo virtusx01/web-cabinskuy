@@ -320,7 +320,7 @@
                     if ($booking->room && !empty($booking->room->room_photos)) {
                         $photos = safeJsonDecode($booking->room->room_photos);
                         if (!empty($photos) && is_string($photos[0])) {
-                            $roomPhotoUrl = Storage::disk('s3')->url($photo[0]);
+                            $roomPhotoUrl = Storage::disk('s3')->url($photos[0]);
                         }
                     }
 

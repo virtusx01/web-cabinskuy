@@ -503,7 +503,7 @@
                         <div class="detail-image-slider-container">
                             @if (!empty($booking->room->room_photos) && is_array($booking->room->room_photos) && count($booking->room->room_photos) > 0)
                                 @foreach ($booking->room->room_photos as $index => $photo)
-                                    <img src="{{ Storage::url($photo) }}"
+                                    <img src="{{ Storage::disk('s3')->url($photo) }}"
                                             alt="{{ $booking->room->typeroom }} - Foto {{ $index + 1 }}"
                                             class="detail-image-slide {{ $index === 0 ? 'active' : '' }}"
                                             data-slide="{{ $index }}">
