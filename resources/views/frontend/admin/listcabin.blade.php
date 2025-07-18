@@ -423,7 +423,7 @@
                             @foreach (array_slice($cabinPhotos, 0, 4) as $photo)
                                 {{-- Ensure $photo is a string before using str_replace --}}
                                 @if (is_string($photo))
-                                    <img src="{{ Storage::disk('s3')->url($photo) }}" class="thumbnail" onclick="changeImage('{{ $cabin->id_cabin }}', '{{ asset('storage/' . str_replace('\\', '/', $photo)) }}')">
+                                    <img src="{{ Storage::disk('s3')->url($photo) }}" class="thumbnail" onclick="changeImage('{{ $cabin->id_cabin }}', '{{ Storage::disk('s3')->url($photo) }}')">
                                 @else
                                     <img src="{{ $defaultPlaceholder }}" class="thumbnail">
                                 @endif

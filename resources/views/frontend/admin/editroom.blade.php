@@ -458,8 +458,8 @@
                             @foreach($currentPhotos as $photoPath)
                                 @php
                                     $photoUrl = asset('images/cabinskuy_placeholder.jpg'); // Default placeholder
-                                    if ($photoPath && Storage::disk('public')->exists($photoPath)) {
-                                        $photoUrl = asset('storage/' . $photoPath);
+                                    if ($photoPath && Storage::disk('s3')->exists($photoPath)) {
+                                        $photoUrl = Storage::disk('s3')->url($photoPath);
                                     }
                                 @endphp
                                 <div class="current-photo-item">

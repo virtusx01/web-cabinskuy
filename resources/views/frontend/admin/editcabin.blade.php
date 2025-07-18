@@ -422,7 +422,7 @@
                         @if($cabin->cabin_photos && count($cabin->cabin_photos) > 0)
                             @foreach($cabin->cabin_photos as $photo)
                                 <div class="current-photo-item" data-photo-path="{{ $photo }}">
-                                    <img src="{{ asset('storage/' . $photo) }}" alt="Foto Kabin">
+                                    <img src="{{ Storage::disk('s3')->url($photo)" alt="Foto Kabin">
                                     <div class="photo-actions">
                                         <label>
                                             <input type="checkbox" name="delete_photos[]" value="{{ $photo }}" class="delete-photo-checkbox"> Hapus
@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
         newPhotoPreviewImage: document.querySelector('.file-input-wrapper .preview-image'),
         newPhotoInputLabel: document.querySelector('.file-input-wrapper .file-input-label')
     };
-    const assetRoot = "{{ rtrim(asset('storage'), '/') }}";
+    const assetRoot = "{{ rtrim(Storage::disk('s3'))) }}";
 
     const initialProvinceName = elements.provinceNameHidden.value;
     const initialRegencyName = elements.regencyNameHidden.value;
