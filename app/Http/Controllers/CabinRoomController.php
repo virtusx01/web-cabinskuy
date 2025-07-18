@@ -33,7 +33,7 @@ class CabinRoomController extends Controller
         if ($request->hasFile('room_photos')) {
             foreach ($request->file('room_photos') as $photo) {
                 $filename = time() . '_' . $photo->getClientOriginalName();
-                $path = $photo->storeAs('images/cabin_rooms', $filename, 'public');
+                $path = $photo->storeAs('images/cabin_rooms', $filename, 's3');
                 $photoPaths[] = $path;
             }
         }
@@ -99,8 +99,8 @@ class CabinRoomController extends Controller
                 
                 // Only delete if the path exists in the current room's photos
                 // and if the file actually exists on disk.
-                if (in_array($cleanedPhotoToDelete, $currentPhotoPaths) && Storage::disk('public')->exists($cleanedPhotoToDelete)) {
-                    Storage::disk('public')->delete($cleanedPhotoToDelete);
+                if (in_array($cleanedPhotoToDelete, $currentPhotoPaths) && Storage::disk('s3')->exists($cleanedPhotoToDelete)) {
+                    Storage::disk('s3')->delete($cleanedPhotoToDelete);
                     // Remove from our working array
                     $currentPhotoPaths = array_diff($currentPhotoPaths, [$cleanedPhotoToDelete]);
                 }
@@ -108,10 +108,15 @@ class CabinRoomController extends Controller
         }
 
         // Handle new photo uploads
+        $currentPhotoPaths = [];
         if ($request->hasFile('room_photos')) {
             foreach ($request->file('room_photos') as $photo) {
-                $filename = time() . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension(); // Add random string to filename
-                $path = $photo->storeAs('images/cabin_rooms', $filename, 'public');
+                // Nama file unik (logika Anda sudah bagus)
+                $filename = time() . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
+                
+                // Simpan ke disk 's3' di dalam folder 'images/cabin_rooms'
+                $path = $photo->storeAs('images/cabin_rooms', $filename, 's3');
+                
                 $currentPhotoPaths[] = $path;
             }
         }
@@ -135,7 +140,7 @@ class CabinRoomController extends Controller
 
         if (!empty($photoPaths)) {
             foreach ($photoPaths as $photo) {
-                Storage::disk('public')->delete($photo);
+                Storage::disk('s3')->delete($photo);
             }
         }
 

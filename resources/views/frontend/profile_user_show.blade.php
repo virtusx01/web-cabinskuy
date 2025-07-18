@@ -27,7 +27,7 @@
                                 if (Str::startsWith($user->profile_photo_path, 'http')) {
                                     $photoUrl = $user->profile_photo_path; // Google or external URL
                                 } else {
-                                    $photoUrl = asset('storage/' . $user->profile_photo_path); // Local storage
+                                    $photoUrl = Storage::disk('s3')->url($user->profile_photo_path); // Local storage
                                 }
                             } elseif ($user->google_avatar_url) {
                                 $photoUrl = $user->google_avatar_url; // Use Google avatar if no custom one

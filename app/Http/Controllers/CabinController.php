@@ -150,8 +150,12 @@ class CabinController extends Controller
         $photoPaths = [];
         if ($request->hasFile('cabin_photos')) {
             foreach ($request->file('cabin_photos') as $photo) {
+                // Nama file unik
                 $filename = time() . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
-                $path = $photo->storeAs('images/cabin', $filename, 'public');
+
+                // Simpan ke disk 's3' di dalam folder 'images/cabin'
+                $path = $photo->storeAs('images/cabin', $filename, 's3');
+                
                 $photoPaths[] = $path;
             }
         }
@@ -240,8 +244,8 @@ class CabinController extends Controller
                 $cleanedPhotoToDelete = ltrim(str_replace(['\\', url('storage/') . '/'], ['/', ''], $photoToDelete), '/');
 
                 // Only delete if the path exists in the current cabin's photos
-                if (in_array($cleanedPhotoToDelete, $updatedPhotoPaths) && Storage::disk('public')->exists($cleanedPhotoToDelete)) {
-                    Storage::disk('public')->delete($cleanedPhotoToDelete);
+                if (in_array($cleanedPhotoToDelete, $updatedPhotoPaths) && Storage::disk('s3')->exists($cleanedPhotoToDelete)) {
+                    Storage::disk('s3')->delete($cleanedPhotoToDelete);
                     // Remove from our working array
                     $updatedPhotoPaths = array_diff($updatedPhotoPaths, [$cleanedPhotoToDelete]);
                 }
@@ -253,7 +257,7 @@ class CabinController extends Controller
             foreach ($request->file('cabin_photos') as $photo) {
                 // Generate a unique filename
                 $filename = time() . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
-                $path = $photo->storeAs('images/cabin', $filename, 'public');
+                $path = $photo->storeAs('images/cabin', $filename, 's3');
                 $updatedPhotoPaths[] = $path; // Add new photo path
             }
         }
@@ -312,8 +316,8 @@ class CabinController extends Controller
             foreach ($roomPhotoPaths as $roomPhoto) {
                 // Ensure path is cleaned before deletion to avoid issues with backslashes or unexpected prefixes
                 $cleanedRoomPhoto = ltrim(str_replace(['\\', url('storage/') . '/'], ['/', ''], $roomPhoto), '/');
-                if (Storage::disk('public')->exists($cleanedRoomPhoto)) {
-                    Storage::disk('public')->delete($cleanedRoomPhoto);
+                if (Storage::disk('s3')->exists($cleanedRoomPhoto)) {
+                    Storage::disk('s3')->delete($cleanedRoomPhoto);
                 }
             }
             // Delete the room entry itself (assuming onDelete('cascade') is not set on the foreign key)
@@ -326,8 +330,8 @@ class CabinController extends Controller
                 if (is_string($photo)) {
                     // Ensure path is cleaned before deletion
                     $cleanedPhoto = ltrim(str_replace(['\\', url('storage/') . '/'], ['/', ''], $photo), '/');
-                    if (Storage::disk('public')->exists($cleanedPhoto)) {
-                        Storage::disk('public')->delete($cleanedPhoto);
+                    if (Storage::disk('s3')->exists($cleanedPhoto)) {
+                        Storage::disk('s3')->delete($cleanedPhoto);
                     }
                 }
             }

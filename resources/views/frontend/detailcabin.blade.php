@@ -565,7 +565,7 @@
             <div class="thumbnail-grid" id="thumbnail-grid">
                 @if(!empty($cabinPhotos))
                     @foreach($cabinPhotos as $photo)
-                        <img src="{{ asset('storage/' . str_replace('\\', '/', $photo)) }}" alt="Thumbnail {{ $loop->iteration }}" onclick="goToMainSlide({{ $loop->index }})">
+                        <img src="{{ Storage::disk('s3')->url($photo)) }}" alt="Thumbnail {{ $loop->iteration }}" onclick="goToMainSlide({{ $loop->index }})">
                     @endforeach
                 @else
                     <img src="{{ $defaultPlaceholder }}" alt="No Photo" class="thumbnail active-thumbnail">

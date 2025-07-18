@@ -19,7 +19,8 @@
 
 @php
     $cabinPhotos = $cabin->cabin_photos ?? [];
-    $firstCabinPhoto = !empty($cabinPhotos) ? asset('storage/' . str_replace('\\', '/', $cabinPhotos[0])) : 'https://placehold.co/180x120/e9ecef/adb5bd?text=No+Image';
+    // Pastikan $cabinPhotos[0] berisi path file di S3/R2
+    $firstCabinPhoto = !empty($cabinPhotos) && isset($cabinPhotos[0]) ? Storage::disk('s3')->url($cabinPhotos[0]) : 'https://placehold.co/180x120/e9ecef/adb5bd?text=No+Image';
 @endphp
 
 <div class="cabin-header-card">
@@ -70,7 +71,8 @@
             @foreach ($cabin->rooms as $room)
                 @php
                     $roomPhotos = $room->room_photos ?? [];
-                    $photoUrl = !empty($roomPhotos) ? asset('storage/' . str_replace('\\', '/', $roomPhotos[0])) : 'https://placehold.co/320x200/e9ecef/adb5bd?text=No+Image';
+                    // Pastikan $roomPhotos[0] berisi path file di S3/R2
+                    $photoUrl = !empty($roomPhotos) && isset($roomPhotos[0]) ? Storage::disk('s3')->url($roomPhotos[0]) : 'https://placehold.co/320x200/e9ecef/adb5bd?text=No+Image';
                 @endphp
                 
                 <div class="room-card">

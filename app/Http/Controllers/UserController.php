@@ -123,11 +123,11 @@ class UserController extends Controller
         if ($request->hasFile('profile_photo')) {
             // Delete old custom profile photo if it exists
             if ($user->profile_photo_path && !str_starts_with($user->profile_photo_path, 'http')) {
-                Storage::disk('public')->delete($user->profile_photo_path);
+                Storage::disk('s3')->delete($user->profile_photo_path);
             }
 
             // Store new profile photo
-            $path = $request->file('profile_photo')->store('profile-photos', 'public');
+            $path = $request->file('profile_photo')->store('profile-photos', 's3');
             $user->profile_photo_path = $path;
             $user->google_avatar_url = null; // Clear Google avatar if a custom photo is uploaded
         }
@@ -135,7 +135,7 @@ class UserController extends Controller
         // Handle photo removal
         if ($request->has('remove_photo') && $request->remove_photo == '1') {
             if ($user->profile_photo_path && !str_starts_with($user->profile_photo_path, 'http')) {
-                Storage::disk('public')->delete($user->profile_photo_path);
+                Storage::disk('s3')->delete($user->profile_photo_path);
             }
             $user->profile_photo_path = null;
             // Optionally, if you want to revert to google_avatar_url after removing custom photo,
@@ -210,11 +210,11 @@ class UserController extends Controller
         try {
             // Delete old custom profile photo if it exists and is not a Google avatar URL
             if ($user->profile_photo_path && !str_starts_with($user->profile_photo_path, 'http')) {
-                Storage::disk('public')->delete($user->profile_photo_path);
+                Storage::disk('s3')->delete($user->profile_photo_path);
             }
 
             // Store new avatar
-            $path = $request->file('avatar')->store('profile-photos', 'public');
+            $path = $request->file('avatar')->store('profile-photos', 's3');
             $user->profile_photo_path = $path;
             $user->google_avatar_url = null; // Clear Google avatar if a custom photo is uploaded
             $user->save();

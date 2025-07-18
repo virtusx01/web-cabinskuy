@@ -416,14 +416,14 @@
                 <div class="cabin-item-gallery">
                     <div class="main-image-container" id="main-image-{{ $cabin->id_cabin }}">
                         {{-- Directly access the first photo path and ensure it's a string --}}
-                        <img src="{{ !empty($cabinPhotos) && is_string($cabinPhotos[0]) ? asset('storage/' . str_replace('\\', '/', $cabinPhotos[0])) : $defaultPlaceholder }}" alt="Foto {{ $cabin->name }}">
+                        <img src="{{ !empty($cabinPhotos) && is_string($cabinPhotos[0]) ? Storage::disk('s3')->url($cabinPhotos[0]) : $defaultPlaceholder }}" alt="Foto {{ $cabin->name }}">
                     </div>
                     @if (!empty($cabinPhotos) && count($cabinPhotos) > 1)
                         <div class="thumbnail-container">
                             @foreach (array_slice($cabinPhotos, 0, 4) as $photo)
                                 {{-- Ensure $photo is a string before using str_replace --}}
                                 @if (is_string($photo))
-                                    <img src="{{ asset('storage/' . str_replace('\\', '/', $photo)) }}" class="thumbnail" onclick="changeImage('{{ $cabin->id_cabin }}', '{{ asset('storage/' . str_replace('\\', '/', $photo)) }}')">
+                                    <img src="{{ Storage::disk('s3')->url($photo) }}" class="thumbnail" onclick="changeImage('{{ $cabin->id_cabin }}', '{{ asset('storage/' . str_replace('\\', '/', $photo)) }}')">
                                 @else
                                     <img src="{{ $defaultPlaceholder }}" class="thumbnail">
                                 @endif
@@ -435,7 +435,7 @@
                         <div class="thumbnail-container">
                             @forelse (array_slice($allRoomPhotos, 0, 3) as $roomPhoto)
                                 @if (is_string($roomPhoto))
-                                    <img src="{{ asset('storage/' . str_replace('\\', '/', $roomPhoto)) }}" class="thumbnail">
+                                    <img src="{{ Storage::disk('s3')->url($roomPhoto) }}" class="thumbnail">
                                 @else
                                     <img src="{{ $defaultPlaceholder }}" class="thumbnail">
                                 @endif

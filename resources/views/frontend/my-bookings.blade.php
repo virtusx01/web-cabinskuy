@@ -299,7 +299,7 @@
                         </span>
                     </div>
                     <div class="booking-card-body">
-                        <img src="{{ !empty($booking->room->room_photos) && is_array($booking->room->room_photos) && count($booking->room->room_photos) > 0 ? Storage::url($booking->room->room_photos[0]) : 'https://via.placeholder.com/150x100/e9f5e9/333333?text=Room' }}"
+                        <img src="{{ !empty($booking->room->room_photos) && is_array($booking->room->room_photos) && count($booking->room->room_photos) > 0 ? Storage::disk('s3')->url($booking->room->room_photos[0]) : 'https://via.placeholder.com/150x100/e9f5e9/333333?text=Room' }}"
                              alt="{{ $booking->room->typeroom }}" class="booking-card-image">
                         <div class="booking-card-details">
                             <h4>{{ $booking->room->typeroom }} Cabin at {{ $booking->cabin->name }}</h4>

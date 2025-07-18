@@ -372,7 +372,7 @@
                 @endphp
 
                 <div class="summary-room-info">
-                    <img src="{{ !empty($roomPhotos) ? asset('storage/' . str_replace('\\', '/', $roomPhotos[0])) : $roomDefaultPlaceholder }}"
+                    <img src="{{ !empty($roomPhotos) ? Storage::disk('s3')->url($roomPhotos[0]) : $roomDefaultPlaceholder }}"
                             alt="{{ $room->typeroom }}">
                     <div class="summary-room-details">
                         <h4>{{ $room->typeroom }} Kabin</h4>
