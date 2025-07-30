@@ -25,14 +25,14 @@ class LoginController extends Controller
         if (Auth::attempt($credentials)) {
             // Check if the authenticated user's status is 0 (inactive)
             if (Auth::user()->status == 0) {
-                Auth::logout(); // Log out the inactive user immediately
+                Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
                 return back()->with('error', 'Akun Anda tidak aktif. Silakan hubungi administrator.');
             }
 
             // If the user is active, proceed with role-based redirection
-            $userRole = Auth::user()->role; // Get the user's role
+            $userRole = Auth::user()->role;
 
             if ($userRole == 'admin' || $userRole == 'superadmin') {
                 // If role is 'admin' OR 'superadmin', redirect to admin dashboard

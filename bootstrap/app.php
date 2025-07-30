@@ -13,8 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' => CheckRole::class  // <--- DI SINI MASALAHNYA!
-            // Harusnya ada koma setelah CheckRole::class
+            'role' => CheckRole::class
         ]);
 
         $middleware->validateCsrfTokens(except: [
